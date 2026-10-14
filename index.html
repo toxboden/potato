@@ -1,0 +1,1703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Potato</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Potato">
+<meta name="description" content="Short vocabulary rounds. Simple is the best.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
+
+<link rel="icon" id="favicon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap">
+<style>
+/* Potato — clean, bright quiz UI.
+   Layout: one phone column; content left-aligned, only the quiz prompt and the result hero are centred.
+   Surfaces are flat tonal fills (no borders, no drop shadows); hierarchy comes from type, not boxes.
+   Colour: white, black, brown, green, red. Brown is the "golden fry" accent and appears only on things you can act on
+   or on the brand moment (rank title); secondary text is neutral grey, never brown.
+   Type: Baloo 2 only for the brand, rank and big numbers; the system sans for everything else.
+   Scale (≈1.25): 12 · 13 · 15 · 17 · 20 · 26 · 34 · 48 */
+:root{
+  --bg:#FFFFFF; --surface:#F3F1EE; --surface-2:#E8E5E0; --sunk:#E8E5E0; --line:#DEDAD4;
+  --ink:#161412; --ink-2:#57524D; --ink-3:#6E6861; --muted:#5F5A55;
+  --accent:#F0A24A; --accent-ink:#2B1706; --accent-deep:#B8661D; --accent-soft:#FDEBD6;
+  --led:#E9A35C; --on-led:#2B1706;
+  --good:#1E9E4E; --good-bg:#E2F5E8; --bad:#E2412E; --bad-bg:#FCE6E2;
+  --skin:#EBA95E; --spot:#B8702F; --face:#2A1608;
+  --f-display:"Baloo 2","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;
+  --f-body:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --f-term:var(--f-body);
+  --t12:.75rem; --t13:.8125rem; --t15:.9375rem; --t17:1.0625rem; --t20:1.25rem; --t26:1.625rem; --t34:2.125rem; --t48:3rem;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121110; --surface:#1D1B19; --surface-2:#282522; --sunk:#282522; --line:#34302C;
+  --ink:#F7F5F2; --ink-2:#B8B2AB; --ink-3:#8A837C; --muted:#B3ADA6;
+  --accent:#F0A24A; --accent-ink:#2B1706; --accent-deep:#F5B56E; --accent-soft:#3A2814;
+  --led:#E9A35C; --on-led:#2B1706;
+  --good:#42C96B; --good-bg:#15301E; --bad:#FF5D4A; --bad-bg:#3A1714;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121110; --surface:#1D1B19; --surface-2:#282522; --sunk:#282522; --line:#34302C;
+  --ink:#F7F5F2; --ink-2:#B8B2AB; --ink-3:#8A837C; --muted:#B3ADA6;
+  --accent:#F0A24A; --accent-ink:#2B1706; --accent-deep:#F5B56E; --accent-soft:#3A2814;
+  --led:#E9A35C; --on-led:#2B1706;
+  --good:#42C96B; --good-bg:#15301E; --bad:#FF5D4A; --bad-bg:#3A1714;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+/* Device sizing: everything below is in rem, so one root size scales the whole app.
+   Phones stay at 100%; tablets and computers grow with the screen — limited by height too,
+   so a full question (card + 4 options) always fits without scrolling. Capped at 150%. */
+html{font-size:clamp(100%, min(2.6667vw, 2.05vh), 150%);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:var(--t15);line-height:1.5;
+  padding-inline:max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  padding-block:max(12px, env(safe-area-inset-top, 0px), 2.5vh) max(40px, env(safe-area-inset-bottom, 0px));-webkit-font-smoothing:antialiased}
+.app{max-width:27.5rem;margin:0 auto;position:relative}
+h1,h2,h3{margin:0;line-height:1.2;text-wrap:balance;font-weight:700}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.screen{display:flex;flex-direction:column;gap:20px}
+.muted{color:var(--ink-2)}
+.meta{color:var(--ink-3);font-size:var(--t13);font-variant-numeric:tabular-nums}
+.label{color:var(--ink-3);font-size:var(--t13);font-weight:600}
+.term{font-weight:700;letter-spacing:-.005em}
+.zh{color:var(--ink-2);font-weight:500}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:3.5rem;border-radius:18px;font-weight:700;font-size:var(--t17);padding:8px 18px;transition:transform .08s}
+.btn:active{transform:scale(.98)}
+/* touch hygiene: no grey tap flash, no text selection on long-press, no accidental pull-to-refresh mid-round */
+button,summary,.choice,.deck-card,.seg,.dirs,.chips{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{overscroll-behavior-y:contain}
+/* every screen slides in; the question card and answers slide in with each new question */
+.screen{animation:screen-in .22s cubic-bezier(.2,.7,.2,1) both}
+@keyframes screen-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.q-in{animation:q-in .2s cubic-bezier(.2,.7,.2,1) both}
+@keyframes q-in{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.screen,.q-in{animation:none}}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-ghost{background:var(--surface);color:var(--ink)}
+.btn[disabled]{opacity:.4;cursor:default;transform:none}
+.btn-danger{background:var(--bad);color:#fff}
+.link{color:var(--accent-deep);font-weight:600;padding:6px 2px}
+.icon-btn{width:2.75rem;height:2.75rem;border-radius:14px;display:grid;place-items:center;color:var(--ink-2)}
+@media (hover:hover) and (pointer:fine){.icon-btn:hover{background:var(--surface)}}
+
+/* setup */
+.setup{padding-top:32px;text-align:center;align-items:center}
+.setup .brand{font-family:var(--f-display);font-size:var(--t48);font-weight:800;letter-spacing:-.02em;line-height:1}
+.motto{font-size:var(--t17);font-weight:600;color:var(--accent-deep);margin:-10px 0 0}
+.field{display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
+.field label{font-size:var(--t13);font-weight:600;color:var(--ink-3)}
+.input{width:100%;padding:14px 16px;border-radius:14px;border:1.5px solid transparent;background:var(--surface);color:var(--ink);font:inherit;font-size:var(--t17)}
+.input:focus{border-color:var(--accent);outline:none}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:var(--surface);padding:4px;border-radius:14px}
+.dirs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface);padding:4px;border-radius:14px}
+.dirs button:last-child{grid-column:1 / -1}
+.seg button,.dirs button{padding:10px 4px;border-radius:11px;font-weight:600;font-size:var(--t15);color:var(--ink-2)}
+.seg button[aria-pressed="true"],.dirs button[aria-pressed="true"]{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+/* home */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hello{font-family:var(--f-display);font-size:var(--t26);font-weight:800;letter-spacing:-.01em;white-space:nowrap;flex:none;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+.topbar > div{min-width:0}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--surface);font-size:var(--t13);font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.chip{gap:0} .chip .dot{margin-right:6px}
+.chip .flame{margin-right:5px;fill:var(--ink-3)} .chip.hit .flame,.chip.lit .flame{fill:var(--accent)}
+.chip #streak{color:var(--ink);font-weight:800}
+.chip.hit{background:var(--accent-soft);color:var(--accent-deep)}
+/* result: daily goal banner */
+.goal-hit{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;background:var(--good-bg);color:var(--good);font-weight:700;font-size:var(--t15);margin:-6px 0 0}
+.goal-hit svg{flex:none}
+/* settings: deck management rows */
+.deck-rows{display:flex;flex-direction:column;gap:10px}
+.deck-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.deck-row:first-child{border-top:0;padding-top:0}
+.deck-row b{display:block;font-size:var(--t15)} .deck-row small{color:var(--ink-3);font-size:var(--t13)}
+.deck-row .link{flex:none}
+.deck-row .confirm{flex:none;justify-content:flex-end}
+.deck-row .confirm .btn{min-height:36px;padding:4px 12px;font-size:var(--t13);width:auto}
+.sync{display:flex;align-items:center;gap:8px;font-size:var(--t13);color:var(--ink-3)}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
+.sync.on i{background:var(--good)} .sync.err i{background:var(--bad)}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.panel{background:var(--surface);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.panel h3{font-size:var(--t17)}
+.today{display:flex;align-items:center;gap:16px}
+.today .mascot{width:5.5rem;flex:none}
+.today-num{font-family:var(--f-display);font-size:var(--t34);font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.today-num small{font-family:var(--f-body);font-size:var(--t15);color:var(--ink-3);font-weight:600}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;display:flex}
+.panel .bar{background:var(--bg)}
+.bar span{display:block;height:100%}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;font-size:var(--t12);color:var(--ink-3)}
+.week i{display:block;height:6px;border-radius:3px;background:var(--surface-2);margin-bottom:6px}
+.week i.hit{background:var(--accent)}
+.week i.part{background:color-mix(in srgb,var(--accent) 35%,var(--bg))}
+.deck-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.deck-head h3{font-size:var(--t20);letter-spacing:-.01em}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:var(--t13);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.legend b{font-weight:800;color:var(--ink);font-size:var(--t15)}
+.legend b.up-mini{color:var(--good)} .legend b.down-mini{color:var(--bad)}
+.legend .up-mini,.legend .down-mini{font-size:var(--t13)}
+.sw{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.c-p{background:var(--good)} .c-a{background:color-mix(in srgb,var(--good) 45%,var(--bg))} .c-v{background:var(--led)} .c-w{background:var(--bad)} .c-n{background:var(--line)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{padding:9px 14px;border-radius:99px;background:var(--bg);color:var(--ink-2);font-weight:600;font-size:var(--t15)}
+.chips button small{font-weight:500;color:var(--ink-3);margin-left:6px;font-size:var(--t13)}
+.chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.chips button[aria-pressed="true"] small{color:var(--accent-ink);opacity:.75}
+.deck-study{border-top:1px solid var(--line);padding-top:14px}
+.deck-sum{display:flex;flex-direction:column;gap:12px;list-style:none;cursor:pointer}
+.deck-sum::-webkit-details-marker{display:none}
+#deck-now{color:var(--ink-2)}
+.flag-box summary{list-style:none;cursor:pointer;align-items:center}
+.flag-box summary::-webkit-details-marker{display:none}
+.deck-list{display:flex;flex-direction:column;gap:12px}
+.deck-card.sel{box-shadow:inset 0 0 0 2px var(--accent)}
+.deck-card:not(.sel){padding-block:14px}
+.panel .deck-card:not(.sel) .deck-name,.deck-card:not(.sel) .deck-name{font-size:var(--t20)}
+/* deck name: the card's headline */
+.panel .deck-name{font-family:var(--f-display);font-size:clamp(1.9rem,8.5vw,2.25rem);font-weight:800;line-height:1.1;letter-spacing:-.01em;color:var(--ink);margin-bottom:2px}
+.deck-card .today .chev{flex:none;align-self:center}
+.deck-sum .today{width:100%;min-width:0}
+.panel .deck-name{overflow-wrap:normal}
+.panel .deck-name.squeeze{overflow-wrap:anywhere}
+.deck-detail{display:flex;flex-direction:column;gap:0}
+.dsec{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.dsec h4{margin:0;font-size:var(--t15);font-weight:700;color:var(--ink)}
+.dsec .today-num{font-size:var(--t26)}
+.flag-box:not([open]){gap:0}
+.flag-box .chev{transition:transform .15s;color:var(--ink-3)}
+.flag-box[open] .chev{transform:rotate(180deg)}
+.flag-list{display:flex;flex-direction:column;gap:14px}
+.fitem{display:grid;gap:4px;border-top:1px solid var(--line);padding-top:12px}
+.fitem:first-child{border-top:0;padding-top:0}
+.fitem .term{font-size:var(--t17)}
+.fitem p{margin:0;font-size:var(--t15)}
+.fitem .ex{color:var(--ink-2)}
+.fitem button{justify-self:start;padding:2px 0}
+.actions{display:flex;flex-direction:column;gap:10px}
+.foot{text-align:center;font-size:var(--t13);color:var(--ink-3);margin-top:4px}
+
+/* round */
+.round-top{display:flex;align-items:center;gap:10px}
+.progress{flex:1;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:4px}
+.progress i{height:6px;border-radius:3px;background:var(--surface-2)}
+.progress i.ok{background:var(--good)} .progress i.no{background:var(--bad)} .progress i.now{background:var(--accent)}
+.count{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-3);min-width:44px;text-align:right}
+.timer{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.timer span{display:block;height:100%;width:100%;background:var(--accent);transform-origin:left center}
+.timer.low span{background:var(--bad)}
+.prompt{min-height:clamp(15rem,38vh,23.75rem);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:28px 22px;background:var(--surface);border-radius:28px}
+.card-count{font-size:var(--t13);font-weight:600;color:var(--ink-3);font-variant-numeric:tabular-nums;background:var(--bg);padding:4px 12px;border-radius:99px}
+.prompt .term{font-weight:800;font-size:clamp(2.4rem,11vw,3.2rem);line-height:1.1;letter-spacing:-.02em;overflow-wrap:normal;max-width:100%;color:var(--ink)}
+.prompt .term.squeeze{overflow-wrap:anywhere}
+.prompt .meaning{font-size:clamp(1.4rem,6vw,1.75rem);font-weight:700;line-height:1.35;max-width:22ch;color:var(--ink)}
+.hint{font-size:var(--t13);color:var(--ink-3)}
+.prompt .say{display:inline-flex;gap:6px;align-items:center;color:var(--ink-2);font-size:var(--t13);font-weight:600;padding:6px 12px;border-radius:99px;background:var(--bg)}
+.choices{display:flex;flex-direction:column;gap:12px;padding-top:14px;position:relative}
+.choice{display:grid;grid-template-columns:1.875rem 1fr;gap:12px;align-items:center;font-size:var(--t20);line-height:1.3;text-align:left;padding:14px 16px;border-radius:18px;background:var(--surface);border:2px solid transparent;min-height:4rem;color:var(--ink)}
+.choice .k{width:1.875rem;height:1.875rem;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-weight:700;font-size:var(--t13);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.choice .en{font-weight:600;display:block}
+.choice .term{font-size:var(--t20)}
+.choice .zh{display:block}
+@media (hover:hover) and (pointer:fine){.choice:hover:not([disabled]){border-color:var(--accent)}}
+.choice.is-right{border-color:var(--good);border-width:3px;background:var(--good-bg);color:var(--good)}
+.choice.is-wrong{border-color:var(--bad);border-width:3px;background:var(--bad-bg);color:var(--bad)}
+.choice.dim{opacity:.32}
+.choice:not([disabled]):active{transform:scale(.985);background:var(--surface-2)}
+.choice{transition:transform .08s,background-color .08s}
+/* "New" tag on a word you have never been asked before */
+.new-tag{font-size:var(--t13);font-weight:700;color:var(--accent-deep);background:var(--accent-soft);padding:4px 10px;border-radius:99px}
+/* tap-to-continue: a bottom sheet carries the correct answer, so it never matters that it covers the list */
+.fb{position:fixed;left:0;right:0;bottom:0;z-index:8;padding:14px 16px calc(16px + env(safe-area-inset-bottom, 0px));background:var(--bad-bg);box-shadow:0 -10px 30px rgba(0,0,0,.10);animation:fb-in .22s cubic-bezier(.2,.7,.2,1) both}
+.fb > div{max-width:27.5rem;margin:0 auto;display:grid;gap:10px}
+.fb b{font-size:var(--t17);color:var(--bad)} .fb p{margin:-4px 0 0;font-size:var(--t17);color:var(--ink);font-weight:600;line-height:1.35}
+.fb p small{display:block;font-weight:500;color:var(--ink-2);font-size:var(--t15)}
+@keyframes fb-in{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion: reduce){.fb{animation:none}}
+@media (orientation: landscape) and (max-height: 540px){.fb > div{grid-template-columns:1fr auto;align-items:center;max-width:60rem} .fb .btn{width:auto;padding-inline:32px}}
+/* buttons inside a grey panel sit on white, so they read as buttons */
+.panel .btn-ghost{background:var(--bg)}
+/* a four-way segment that would wrap goes 2 x 2 */
+.seg.two{grid-auto-flow:row;grid-template-columns:1fr 1fr}
+.choice .k.mark{background:none;font-size:1.5rem;font-weight:800}
+.choice.is-right .k{color:var(--good)} .choice.is-wrong .k{color:var(--bad)}
+.choice[disabled]{cursor:default}
+.verdict{text-align:center;font-weight:700;font-size:var(--t17);min-height:1.6rem}
+.verdict.ok{color:var(--good)} .verdict.no{color:var(--bad)}
+/* combo pop: rainbow like mikan, deliberately outside the Potato palette */
+.combo{position:absolute;left:2px;z-index:3;pointer-events:none;display:flex;align-items:baseline;gap:6px;font-family:var(--f-display);font-style:italic;font-weight:800;line-height:1;
+  background:linear-gradient(90deg,#E8559A,#9A5BE0 55%,#3F7FE8);-webkit-background-clip:text;background-clip:text;color:transparent;
+  /* black outline in both themes: four 1.5px offsets, then a soft lift */
+  filter:drop-shadow(1.5px 0 0 #000) drop-shadow(-1.5px 0 0 #000) drop-shadow(0 1.5px 0 #000) drop-shadow(0 -1.5px 0 #000) drop-shadow(0 3px 4px rgba(0,0,0,.3));animation:combo-pop .12s ease-out;transform-origin:left center}
+.combo b{font-size:2.7rem;letter-spacing:-.03em;line-height:.85}
+.combo span{font-size:1.45rem;letter-spacing:.02em;line-height:.85}
+/* fast surprise pop: snaps in oversized, then settles */
+@keyframes combo-pop{0%{transform:scale(.2) rotate(-12deg);opacity:0}55%{transform:scale(1.35) rotate(4deg);opacity:1}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.combo{animation:none}}
+/* Simple mode: rainbow COMBO without the black outline, just the soft lift */
+body.simple .combo{filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
+
+/* ---------- device fits ----------
+   Short phones (iPhone SE, Fold cover screen): a slimmer card and options so all 4 answers show without scrolling. */
+@media (orientation: portrait) and (max-height: 780px){
+  #s-round{gap:12px}
+  #s-round .prompt{min-height:clamp(8.5rem,27vh,15rem);padding:16px 18px;gap:10px}
+  #s-round .prompt .term{font-size:clamp(1.9rem,9.5vw,2.8rem)}
+  #s-round .choices{gap:8px;padding-top:8px}
+  #s-round .choice{min-height:3.4rem;padding:10px 14px}
+}
+/* answers that are English sentences take more height: slimmer question card, tighter options */
+#s-round.dir-en .prompt{min-height:clamp(9rem,24vh,14rem);padding:18px 20px;gap:10px}
+#s-round.dir-en .choice{font-size:var(--t17);min-height:3.4rem;padding:11px 14px;line-height:1.3}
+#s-round.dir-en .choices{gap:10px}
+/* Phones turned sideways: question on the left, the 4 answers on the right — no scrolling. */
+@media (orientation: landscape) and (max-height: 540px){
+  body{padding-block:8px 12px}
+  body[data-screen="round"] .app{max-width:min(100%, 60rem)}
+  body[data-screen="home"] .app, body[data-screen="result"] .app, body[data-screen="settings"] .app{max-width:min(100%, 36rem)}
+  #s-round{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"top top" "timer timer" "prompt choices" "prompt verdict";gap:8px 16px;align-items:stretch}
+  #s-round .round-top{grid-area:top} #s-round .timer{grid-area:timer}
+  #s-round .prompt{grid-area:prompt;min-height:0;padding:12px 16px;gap:8px}
+  #s-round .prompt .term{font-size:clamp(1.7rem,10vh,2.6rem)}
+  #s-round .choices{grid-area:choices;gap:8px;padding-top:0}
+  #s-round .choice{min-height:2.9rem;padding:8px 12px;font-size:var(--t17)}
+  #s-round .verdict{grid-area:verdict;min-height:1.2rem}
+  .setup{padding-top:8px}
+}
+/* Very narrow screens (Galaxy Fold cover, 320px phones): smaller potato in the deck card, compact streak chip. */
+.chip{white-space:nowrap}
+@media (max-width: 360px){
+  .topbar{gap:4px} .hello{font-size:var(--t20)}
+  .today{gap:10px} .today .mascot{width:3.5rem}
+  .deck-card{padding:14px}
+}
+@media (max-width: 380px){ .chip .lbl{display:none} }
+/* Touch screens: no double-tap zoom delay on buttons; text fields at 16px+ so iOS doesn't zoom in. */
+button,summary,a,.choice{touch-action:manipulation}
+@media (pointer:coarse){textarea.input{font-size:max(1rem, 16px)}}
+
+/* result: hero centred, everything after it left-aligned */
+.result{align-items:center;position:relative;overflow:hidden}
+.result-top{width:100%;display:flex;justify-content:space-between;position:relative;z-index:1}
+.rank{font-family:var(--f-display);font-size:clamp(2.4rem,11vw,3rem);font-weight:800;letter-spacing:-.02em;line-height:1;color:var(--accent-deep);text-align:center}
+.praise{margin:-8px 0 0;font-size:var(--t17);color:var(--ink-2);max-width:30ch;text-align:center}
+.result .mascot{width:8.25rem}
+.result .mascot.cheer{width:11.125rem;margin:-6px 0 -4px}
+/* the cheering potato: hop with a squash, arms waving, legs kicking, stars twinkling */
+/* fill-box only on the moving parts: on every child it would shift the leaves' own rotate() and break the sprout */
+.pm-jump,.pm-armL,.pm-armR,.pm-legL,.pm-legR,.pm-sprout,.pm-tw{transform-box:fill-box}
+.pm-jump{transform-origin:50% 100%;animation:pm-jump .62s cubic-bezier(.35,0,.45,1) infinite}
+@keyframes pm-jump{0%,100%{transform:translateY(0) scale(1.05,.94)}18%{transform:translateY(0) scale(1)}50%{transform:translateY(-11px) scale(.97,1.04)}82%{transform:translateY(0) scale(1)}}
+.pm-armL{transform-origin:100% 100%;animation:pm-waveL .31s ease-in-out infinite alternate}
+.pm-armR{transform-origin:0 100%;animation:pm-waveR .31s ease-in-out infinite alternate}
+@keyframes pm-waveL{from{transform:rotate(-16deg)}to{transform:rotate(22deg)}}
+@keyframes pm-waveR{from{transform:rotate(16deg)}to{transform:rotate(-22deg)}}
+.pm-legL{transform-origin:50% 0;animation:pm-kick .31s ease-in-out infinite alternate}
+.pm-legR{transform-origin:50% 0;animation:pm-kick .31s ease-in-out infinite alternate-reverse}
+@keyframes pm-kick{from{transform:rotate(16deg)}to{transform:rotate(-12deg)}}
+.pm-sprout{transform-origin:50% 100%;animation:pm-sway .62s ease-in-out infinite alternate}
+@keyframes pm-sway{from{transform:rotate(-9deg)}to{transform:rotate(9deg)}}
+.pm-tw{transform-origin:50% 50%;animation:pm-tw .9s ease-in-out infinite}
+@keyframes pm-tw{0%,100%{transform:scale(.35) rotate(0);opacity:.35}50%{transform:scale(1.15) rotate(45deg);opacity:1}}
+@media (prefers-reduced-motion: reduce){.pm-cheer *{animation:none!important}}
+.score{width:100%;background:var(--surface);border-radius:24px;padding:20px;display:grid;gap:16px;text-align:center}
+.score-tag{justify-self:center;font-size:var(--t13);font-weight:600;color:var(--ink-3)}
+.score-big{font-family:var(--f-display);font-weight:800;font-size:clamp(3.75rem,17vw,4.5rem);line-height:.9;font-variant-numeric:tabular-nums;margin-top:-8px}
+.score-big small{font-size:var(--t34);color:var(--ink-3)}
+.stats{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);padding-top:16px}
+.stats div+div{border-left:1px solid var(--line)}
+.stats span{display:block;font-size:var(--t13);color:var(--ink-3)}
+.stats > div{display:flex;flex-direction:column;align-items:center;gap:2px}
+.stats div > span:first-child{color:var(--ink-2);font-weight:600;margin-bottom:2px}
+.stats b{font-family:var(--f-display);font-size:var(--t34);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.stats b .val{display:inline;font-size:inherit;color:inherit;font-weight:inherit;margin:0}
+/* combo number on the result: the same rainbow as the in-round COMBO */
+.stats b#sc-combo{font-size:3.4rem;line-height:.95;margin-top:-6px;font-style:italic;padding:0 .14em;background:linear-gradient(90deg,#E8559A,#9A5BE0 55%,#3F7FE8);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(1.2px 0 0 #000) drop-shadow(-1.2px 0 0 #000) drop-shadow(0 1.2px 0 #000) drop-shadow(0 -1.2px 0 #000) drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+body.simple .stats b#sc-combo{filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.stats b small{font-family:var(--f-body);font-size:var(--t15);color:var(--ink-3);font-weight:600}
+#sc-best.new{color:var(--good);font-weight:700}
+.actions{width:100%}
+
+.lesson{width:100%;background:var(--surface);border-radius:24px;padding:20px;display:grid;gap:14px;text-align:left}
+.lesson-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.lesson-head small{display:block;color:var(--ink-3);font-size:var(--t13);font-weight:500}
+.lesson-head b{display:block;font-size:var(--t20);font-weight:700;letter-spacing:-.01em;color:var(--ink);margin:2px 0}
+.lesson-pct{flex:none;font-family:var(--f-display);font-weight:800;font-size:var(--t48);line-height:1;font-variant-numeric:tabular-nums;text-align:right}
+.pct-num{white-space:nowrap}
+.lesson-head .lesson-pct small{display:inline;font-size:var(--t20);color:var(--ink-3);margin-left:1px}
+.lesson-pct span{display:block;font-family:var(--f-body);font-size:var(--t13);font-weight:500;color:var(--ink-3);margin-top:4px;line-height:1.3}
+.lesson-pct span + span{color:var(--ink-2);font-weight:600}
+.round-note{margin:0;font-size:var(--t13);color:var(--ink-2);grid-column:1 / -1}
+.goalbar{height:1.625rem;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.goalbar span{display:flex;align-items:center;height:100%;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:var(--t15);padding-left:10px;min-width:38px;border-radius:99px;font-variant-numeric:tabular-nums}
+.goal-note{margin:-4px 0 0;font-size:var(--t13);color:var(--ink-2)}
+.levels{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;border-top:1px solid var(--line);padding-top:14px}
+.levels .lab{text-align:right;font-weight:600;font-size:var(--t15);color:var(--ink);line-height:1.15}
+.levels .track{display:flex;align-items:center;gap:10px;min-height:1.875rem;min-width:0}
+.levels .fill{height:1.875rem;border-radius:9px;display:flex;align-items:center;padding:0 10px;font-weight:800;font-size:var(--t17);min-width:36px;font-variant-numeric:tabular-nums;color:#fff}
+.fill.l-perfect{background:var(--good)}
+.fill.l-almost{background:color-mix(in srgb,var(--good) 40%,var(--bg));color:var(--ink)}
+.fill.l-vague{background:var(--led);color:var(--on-led)}
+.fill.l-weak{background:var(--bad)}
+.fill.zero{background:var(--bg);color:var(--ink-3)}
+.delta{font-family:var(--f-display);font-weight:800;font-size:var(--t26);line-height:1;font-variant-numeric:tabular-nums}
+.delta.up{color:var(--good)} .delta.down{color:var(--bad)}
+.levels .rest{grid-column:1 / -1;font-size:var(--t13);color:var(--ink-3);text-align:right;margin:0}
+.unlock{margin:0;font-weight:700;font-size:var(--t15);color:var(--good)}
+.up-mini{color:var(--good)} .down-mini{color:var(--bad)}
+
+.list{width:100%;text-align:left;display:flex;flex-direction:column;gap:8px}
+.list > .note{text-align:center}
+.list h3{font-size:var(--t15);font-weight:700;color:var(--ink-2);margin:10px 0 2px}
+.row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:var(--surface);border-radius:18px;padding:14px 16px}
+.row.miss{box-shadow:inset 4px 0 0 var(--bad)}
+.row .term{font-size:var(--t17);color:var(--ink)}
+.row p{margin:2px 0 0;font-size:var(--t15);color:var(--ink)}
+.row .zh{color:var(--ink-2)}
+.tally{font-size:var(--t13);color:var(--ink-3);font-variant-numeric:tabular-nums;margin-top:4px}
+.tally b{font-weight:700}
+.tally .r{color:var(--good)} .tally .w{color:var(--bad)}
+summary.row{list-style:none;cursor:pointer}
+summary.row::-webkit-details-marker{display:none}
+.item[open] .row{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.more{background:var(--surface);border-top:1px solid var(--line);border-radius:0 0 18px 18px;padding:12px 16px 14px;display:grid;gap:6px}
+.more p{margin:0;font-size:var(--t15);color:var(--ink-2)}
+.ex-label{font-size:var(--t13);font-weight:600;color:var(--ink-3)}
+.flag-btn{justify-self:start;margin-top:4px;padding:7px 14px;border-radius:99px;background:var(--bad-bg);color:var(--bad);font-weight:600;font-size:var(--t13)}
+.flag-btn.on{background:var(--bad);color:#fff}
+body.simple .adv{display:none!important}
+body:not(.simple) .simple-only{display:none!important}
+
+[hidden]{display:none!important}
+.sheet-bg{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,#000 50%,transparent);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
+.sheet{width:100%;max-width:27.5rem;background:var(--bg);border-radius:28px;padding:24px 18px 18px;display:flex;flex-direction:column;gap:12px;text-align:center}
+.sheet h2{font-size:var(--t20)}
+.confetti{position:absolute;inset:0;pointer-events:none}
+.confetti i{position:absolute;top:-12px;width:7px;height:12px;border-radius:2px;opacity:.9;animation:fall 1.8s ease-in forwards}
+@keyframes fall{to{transform:translateY(260px) rotate(320deg);opacity:0}}
+/* burst pieces stay invisible until their own launch moment, so nothing waits in a pile on the potato */
+.confetti b{position:absolute;left:0;top:0;border-radius:2px;opacity:0}
+.result .mascot{position:relative;z-index:1}   /* the spray comes out from behind the potato */
+
+/* settings */
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0}
+.toggle b{font-weight:600;font-size:var(--t15)}
+.switch{width:52px;height:32px;border-radius:99px;background:var(--surface-2);position:relative;flex:none}
+.panel .switch{background:var(--line)}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.switch[aria-checked="true"]{background:var(--accent)}
+.switch[aria-checked="true"]::after{left:23px}
+textarea.input{min-height:140px;font-size:var(--t13);line-height:1.6;resize:vertical}
+.panel .input,.panel .seg,.panel .dirs{background:var(--bg)}
+.panel .seg button[aria-pressed="true"],.panel .dirs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);box-shadow:none}
+.note{font-size:var(--t13);color:var(--ink-2);margin:0}
+.msg{font-size:var(--t15);font-weight:600;margin:0;min-height:1.2em}
+.msg.ok{color:var(--good)} .msg.no{color:var(--bad)}
+.confirm{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.confirm .btn{width:auto;min-height:44px;font-size:var(--t15)}
+@media (prefers-reduced-motion: reduce){.confetti{display:none}*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="app" id="app">
+
+  <section class="screen setup" id="s-setup" hidden>
+    <div id="setup-mascot" style="width:9.375rem"></div>
+    <h1 class="brand">Potato</h1>
+    <p class="motto">Simple is the best.</p>
+    <p class="muted" style="margin:0;max-width:30ch;font-size:var(--t17)">Short rounds of terms. Pick the meaning before the timer runs out.</p>
+    <div class="field">
+      <label for="in-name">Your name</label>
+      <input class="input" id="in-name" maxlength="20" autocomplete="nickname" placeholder="e.g. Paula">
+    </div>
+    <div class="field">
+      <label>Daily goal (different terms)</label>
+      <div class="seg" id="setup-goal"></div>
+    </div>
+    <button class="btn btn-primary" id="btn-begin">Start learning</button>
+  </section>
+
+  <section class="screen" id="s-home" hidden>
+    <div class="topbar">
+      <h1 class="hello" id="hello">Hi</h1>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="chip adv" title="Days in a row you met your goal"><svg class="flame" width="14" height="16" viewBox="0 0 14 16" aria-hidden="true"><path d="M7 .6c.5 3.1 3.6 4.4 3.6 8a3.6 3.6 0 1 1-7.2 0c0-1.5.6-2.6 1.2-3.5.3 1 .9 1.7 1.6 2.1C6.5 5.6 5.4 2.6 7 .6z"/></svg><span id="streak">0</span><span class="lbl" id="streak-lbl">-day streak</span></span>
+        <button class="icon-btn" id="btn-theme" aria-label="Switch to dark mode"></button>
+        <button class="icon-btn" id="btn-settings" aria-label="Settings">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- one card per deck; tap a card to select it, tap the selected card (Advanced) to open its details -->
+    <div class="deck-list" id="deck-list"></div>
+    <div hidden id="detail-holder">
+      <div class="deck-detail" id="deck-detail">
+        <section class="dsec">
+          <h4>Today</h4>
+          <div class="today-num"><span id="today-n">0</span> <small>/ goal <span id="today-goal">20</span> different terms</small></div>
+          <div class="bar"><span id="today-bar" style="background:var(--accent);width:0"></span></div>
+          <span class="meta" id="today-sub"></span>
+          <div class="week" id="week"></div>
+        </section>
+        <section class="dsec">
+          <h4>Memory levels</h4>
+          <div class="bar" id="deck-bar"></div>
+          <div class="legend">
+            <span><i class="sw c-p"></i>Perfect <b id="n-p">0</b></span>
+            <span><i class="sw c-a"></i>Almost <b id="n-a">0</b></span>
+            <span><i class="sw c-v"></i>Vague <b id="n-v">0</b></span>
+            <span><i class="sw c-w"></i>Weak <b id="n-w">0</b></span>
+            <span><i class="sw c-n"></i>New <b id="n-n">0</b></span>
+          </div>
+        </section>
+        <section class="dsec">
+          <h4>Study</h4>
+          <div class="chips" id="scope"></div>
+          <p class="note" id="scope-note"></p>
+        </section>
+      </div>
+    </div>
+
+    <details class="panel flag-box adv" id="flag-panel" hidden>
+      <summary class="deck-head"><h3>Don't get it yet</h3><span class="meta" style="display:flex;align-items:center;gap:6px"><span id="flag-n"></span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+      <p class="note">Kept out of quizzes until you tap "I get it now".</p>
+      <div class="flag-list" id="flag-list"></div>
+    </details>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-go">Start a round</button>
+      <button class="btn btn-ghost adv" id="btn-weak">Review weak terms</button>
+    </div>
+    <p class="foot">Simple is the best.</p>
+  </section>
+
+  <section class="screen" id="s-round" hidden>
+    <div class="round-top">
+      <button class="icon-btn" id="btn-quit" aria-label="End round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="progress" id="progress"></div>
+      <span class="count" id="count" hidden>1/10</span>
+    </div>
+    <div class="timer" id="timer"><span id="timer-bar"></span></div>
+    <div class="prompt">
+      <div class="card-count" id="card-count">1 / 10</div>
+      <span class="new-tag" id="new-tag" hidden>New term</span>
+      <div class="hint" id="prompt-hint" hidden></div>
+      <div class="term" id="prompt-term">TCP</div>
+      <button class="say" id="btn-say" hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7"/></svg>Listen
+      </button>
+    </div>
+    <div class="choices" id="choices"></div>
+    <div class="verdict" id="verdict" aria-live="polite"></div>
+  </section>
+  <!-- tap-to-continue mode: the correct answer stays in a sheet at the bottom until you tap Continue -->
+  <div class="fb" id="fb-sheet" hidden><div><b id="fb-title">Not quite</b><p id="fb-answer"></p><button class="btn btn-primary" id="btn-continue">Continue</button></div></div>
+
+  <div class="sheet-bg" id="quit-sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="quit-title">
+      <h2 id="quit-title">Quit this round?</h2>
+      <p class="note" id="quit-text">The timer is paused. Terms you've already answered are saved.</p>
+      <button class="btn btn-primary" id="btn-stay">Keep going</button>
+      <button class="btn btn-ghost" id="btn-leave">Quit to home</button>
+    </div>
+  </div>
+
+  <section class="screen result" id="s-result" hidden>
+    <div class="confetti" id="confetti"></div>
+    <div class="result-top">
+      <button class="icon-btn" id="btn-res-home" aria-label="Home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-res-settings" aria-label="Settings">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
+    </div>
+    <h1 class="rank" id="rank">Network Engineer</h1>
+    <p class="praise" id="praise"></p>
+    <div class="goal-hit" id="goal-hit" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="goal-hit-txt">Daily goal reached</span></div>
+    <div class="mascot" id="result-mascot"></div>
+    <div class="score">
+      <span class="score-tag">This round</span>
+      <div class="score-big"><span id="sc-ok">10</span><small>/<span id="sc-n">10</span></small></div>
+      <div class="stats">
+        <div><span>Round time</span><b><span class="val" id="sc-time">14</span><small> s</small></b><span id="sc-best"></span></div>
+        <div><span>Combo now</span><b id="sc-combo">0</b><span id="sc-combo-note">right answers in a row</span></div>
+      </div>
+    </div>
+    <div class="actions" style="width:100%">
+      <button class="btn btn-primary" id="btn-next">Next round</button>
+      <button class="btn btn-ghost" id="btn-redo" hidden>Review missed</button>
+      <button class="btn btn-ghost" id="btn-home">Back to home</button>
+    </div>
+    <div class="lesson adv" id="lesson-card"></div>
+    <div class="lesson adv" id="deck-card"></div>
+    <div class="list" id="res-list"></div>
+  </section>
+
+  <section class="screen" id="s-settings" hidden>
+    <div class="topbar">
+      <button class="icon-btn" id="btn-back" aria-label="Back">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <h1 style="font-family:var(--f-display);font-size:var(--t26);font-weight:800;flex:1">Settings</h1>
+    </div>
+    <div class="panel">
+      <h3>Look &amp; feel</h3>
+      <div class="field"><label>Appearance</label><div class="seg" id="set-theme"></div></div>
+      <div class="field"><label>Mode</label><div class="seg" id="set-ver"></div><p class="note" id="ver-note"></p></div>
+      <div class="field"><label for="set-name">Your name</label><input class="input" id="set-name" maxlength="20" autocomplete="nickname"></div>
+    </div>
+    <div class="panel">
+      <h3>Learning</h3>
+      <div class="field adv"><label>Daily goal (different terms a day)</label><div class="seg" id="set-goal"></div></div>
+      <div class="field"><label>Questions per round</label><div class="seg" id="set-size"></div></div>
+      <div class="field"><label>Seconds per question</label><div class="seg" id="set-timer"></div></div>
+      <div class="field"><label>Quiz direction</label><div class="dirs" id="set-dir"></div></div>
+      <div class="field adv"><label>After a right answer</label><div class="seg" id="set-pace-ok"></div></div>
+      <div class="field adv"><label>After a mistake</label><div class="seg two" id="set-pace-no"></div><p class="note">How long the correct answer stays on screen before the next question. With a timed pause, tapping the screen moves on early; with Tap to continue, the answer stays until you tap Continue.</p></div>
+    </div>
+    <div class="panel">
+      <h3>Sound &amp; touch</h3>
+      <div class="toggle"><span><b>Read terms aloud</b><br><span class="meta">Uses your device's voice</span></span><button class="switch" id="set-speak" role="switch" aria-checked="false" aria-label="Read terms aloud"></button></div>
+      <div class="toggle"><span><b>Sound effects</b><br><span class="meta">Chimes for answers and results</span></span><button class="switch" id="set-sfx" role="switch" aria-checked="true" aria-label="Sound effects"></button></div>
+      <div class="toggle" id="vibe-row" hidden><span><b>Vibrate on mistakes</b><br><span class="meta">A short buzz for a wrong answer or time-out</span></span><button class="switch" id="set-vibe" role="switch" aria-checked="true" aria-label="Vibrate on mistakes"></button></div>
+    </div>
+    <div class="panel">
+      <h3>Your decks</h3>
+      <div class="deck-rows" id="deck-rows"></div>
+      <p class="note" id="deck-restore"></p>
+    </div>
+    <div class="panel">
+      <h3>Add your own deck</h3>
+      <p class="note">One term per line: <span class="term">term | English meaning | 中文 | example</span>. The Chinese and example parts are optional. At least 4 lines. Importing adds a new deck; your other decks and their progress stay as they are.</p>
+      <div class="field"><label for="imp-title">Deck name</label><input class="input" id="imp-title" placeholder="e.g. IB Maths terms"></div>
+      <div class="field"><label for="imp-text">Terms</label><textarea class="input" id="imp-text" placeholder="derivative | rate of change of a function | 导数&#10;integral | area under a curve | 积分"></textarea></div>
+      <button class="btn btn-ghost" id="btn-import">Add deck</button>
+      <p class="msg" id="imp-msg" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <h3>Progress</h3>
+      <p class="sync" id="sync-line"><i></i><span id="sync-txt">Saved on this device only.</span></p>
+      <div id="backup-box" hidden>
+        <p class="note">Copy this code to move your progress to another device, or paste a code from another device to restore it.</p>
+        <div class="confirm"><button class="btn btn-ghost" id="btn-backup" style="width:auto;min-height:42px;font-size:1rem">Copy backup code</button><button class="btn btn-ghost" id="btn-restore" style="width:auto;min-height:42px;font-size:1rem">Paste a code</button></div>
+        <div id="restore-box" hidden style="display:grid;gap:8px"><textarea class="input" id="restore-text" placeholder="Paste the backup code here"></textarea><div class="confirm"><button class="btn btn-primary" id="btn-restore-go" style="width:auto;min-height:42px;font-size:1rem">Restore</button><button class="btn btn-ghost" id="btn-restore-no" style="width:auto;min-height:42px;font-size:1rem">Cancel</button></div></div>
+        <p class="msg" id="backup-msg" aria-live="polite"></p>
+      </div>
+      <p class="note">Reset clears mastery, streak and daily counts. Your decks stay.</p>
+      <div class="confirm" id="reset-box"><button class="btn btn-ghost" id="btn-reset" style="width:auto;min-height:42px;font-size:1rem">Reset progress</button></div>
+    </div>
+    <p class="foot">Potato · Simple is the best.</p>
+  </section>
+</div>
+
+<script>
+(function(){
+const SEED = [
+["IP address","Numeric label that identifies a device on a network","IP地址"],
+["DNS","Translates domain names into IP addresses","域名系统"],
+["Router","Forwards packets between different networks","路由器"],
+["Switch","Connects devices inside one local network by MAC address","交换机"],
+["Packet","Small unit of data sent across a network","数据包"],
+["Bandwidth","Maximum amount of data a link can carry per second","带宽"],
+["Latency","Delay for data to travel from source to destination","延迟"],
+["Firewall","Allows or blocks traffic based on security rules","防火墙"],
+["TCP","Reliable, ordered, connection-based transport protocol","传输控制协议"],
+["UDP","Fast, connectionless transport with no delivery guarantee","用户数据报协议"],
+["HTTP","Protocol browsers use to request web pages","超文本传输协议"],
+["HTTPS","HTTP encrypted with TLS","安全超文本传输协议"],
+["LAN","Network covering a small area such as a home or office","局域网"],
+["WAN","Network spanning a large geographic area","广域网"],
+["MAC address","Hardware address of a network interface","MAC地址（物理地址）"],
+["DHCP","Automatically assigns IP addresses to devices","动态主机配置协议"],
+["Subnet mask","Splits an IP address into network and host parts","子网掩码"],
+["Gateway","Node that links a local network to other networks","网关"],
+["NAT","Lets many private devices share one public IP address","网络地址转换"],
+["Port","Number that identifies a specific service on a host","端口"],
+["Protocol","Agreed set of rules for exchanging data","协议"],
+["Ping","Tool that tests reachability and round-trip time","连通性测试（Ping）"],
+["VPN","Encrypted tunnel across a public network","虚拟专用网络"],
+["Proxy server","Intermediary that forwards requests for clients","代理服务器"],
+["Throughput","Actual rate of data successfully delivered","吞吐量"],
+["Topology","Layout of how network devices are connected","网络拓扑"],
+["OSI model","Seven-layer framework for network communication","OSI七层模型"],
+["Ethernet","Most common wired LAN technology","以太网"],
+["Wi-Fi","Wireless LAN technology based on IEEE 802.11","无线局域网"],
+["IPv6","Version of IP that uses 128-bit addresses","互联网协议第6版"],
+["Handshake","Exchange that sets up a connection before data flows","握手"],
+["Encryption","Scrambling data so only authorised parties can read it","加密"],
+["Load balancer","Spreads incoming traffic across several servers","负载均衡器"],
+["Hub","Device that repeats every signal to all its ports","集线器"],
+["Modem","Converts between digital data and line signals","调制解调器"],
+["Server","Computer that provides services to other computers","服务器"],
+["Client","Device or program that requests a service","客户端"],
+["URL","Address of a resource on the web","统一资源定位符"],
+["Domain name","Human-readable name for a website","域名"],
+["Packet loss","Packets that never reach their destination","丢包"],
+["Jitter","Variation in packet delay over time","抖动"],
+["ARP","Finds the MAC address that matches an IP address","地址解析协议"]
+];
+const EX = {
+"IP address":"Like a home address: it tells the network where to deliver data for your device.",
+"DNS":"Like your phone's contacts: you look up a name and get the number (IP address) to dial.",
+"Router":"Like a post office sorting letters: it picks which road each packet takes to another network.",
+"Switch":"Like a building's mail room: it delivers to the right flat inside the same building.",
+"Packet":"Like posting a book as numbered postcards: each piece travels alone and is put back together at the end.",
+"Bandwidth":"Like the number of lanes on a highway: more lanes, more cars per second.",
+"Latency":"Like the pause on a long-distance call before the other person hears you.",
+"Firewall":"Like a security guard at the door checking who may come in or go out.",
+"TCP":"Like registered mail: every piece is tracked, confirmed, and sent again if lost.",
+"UDP":"Like shouting across a room: fast, but nobody checks every word arrived. Used for video calls and games.",
+"HTTP":"The language your browser uses to say \"please give me this page\".",
+"HTTPS":"HTTP inside a sealed envelope, so nobody on the way can read or change it. It's the padlock in your browser.",
+"LAN":"The network inside your home or school, such as all the devices on your home Wi-Fi.",
+"WAN":"A network spread across cities or countries. The internet is the biggest WAN.",
+"MAC address":"Like a serial number printed on your network card: it names the hardware itself.",
+"DHCP":"Like a hotel receptionist giving each new guest a room number (IP address) when they arrive.",
+"Subnet mask":"Like the part of an address that says which street, versus which house on that street.",
+"Gateway":"The door out of your home network. At home it's usually your router.",
+"NAT":"Like a company with one public phone number and many extensions inside.",
+"Port":"Like a flat number: the IP address finds the building, the port finds the service inside it.",
+"Protocol":"Like the rules of a conversation: who speaks first, how to say hello, how to say goodbye.",
+"Ping":"Like knocking on a door and timing how long until someone knocks back.",
+"VPN":"Like a private tunnel under a public road: others see the tunnel, not what's inside.",
+"Proxy server":"Like asking a friend to buy something for you, so the shop sees your friend, not you.",
+"Throughput":"Bandwidth is how many lanes the highway has; throughput is how many cars actually got through.",
+"Topology":"The map of how devices are wired together: star, ring, bus or mesh.",
+"OSI model":"Like the steps of sending a parcel: the item, packing, labelling, then the truck on the road.",
+"Ethernet":"The cable you plug into a laptop or router for a wired connection.",
+"Wi-Fi":"Ethernet without the cable: the data travels by radio waves.",
+"IPv6":"The newer, much bigger address book, because the old IPv4 one ran out of addresses.",
+"Handshake":"Like \"Hello?\" \"Yes, I hear you.\" \"Great, let's talk.\" before a phone call starts.",
+"Encryption":"Like writing a message in a secret code only the receiver can unlock.",
+"Load balancer":"Like a supermarket worker sending shoppers to the shortest checkout queue.",
+"Hub":"Like shouting every message to the whole room. A switch whispers only to the right person.",
+"Modem":"The box that turns the signal on your internet line into data your router can use.",
+"Server":"Like a restaurant kitchen: it waits for orders and serves them.",
+"Client":"Like the customer placing the order. Your browser or app is the client.",
+"URL":"The full address you type into the browser, like https://example.com/page.",
+"Domain name":"The easy name, like google.com, instead of a string of numbers.",
+"Packet loss":"Like postcards going missing in the post. On a video call it shows as freezing or choppy sound.",
+"Jitter":"Like a bus that's sometimes 1 minute late and sometimes 10: the delay keeps changing.",
+"ARP":"Like asking a building \"who lives at this address?\" and the right person answering with their name tag (MAC)."
+};
+const WIRELESS = [
+["SSID","Name of a Wi-Fi network","网络名称（SSID）","Like the name on a shop sign, so you can find the right shop."],
+["Access point","Device that lets wireless devices join a wired network","无线接入点","Like a doorway between the wired building and the wireless street."],
+["2.4 GHz band","Wi-Fi band with longer range but more interference","2.4 GHz 频段","Like a loud voice: it carries far but gets drowned out in a crowd."],
+["5 GHz band","Wi-Fi band with higher speed but shorter range","5 GHz 频段","Like an express lane: faster, but it ends sooner."],
+["6 GHz band","Newest Wi-Fi band with wide, uncrowded channels (Wi-Fi 6E and 7)","6 GHz 频段","Like a brand-new highway with almost no traffic yet."],
+["Channel","Slice of a frequency band that a network transmits on","信道","Like one lane on a radio highway."],
+["Interference","Other signals that disrupt a wireless connection","干扰","Like trying to talk while a vacuum cleaner runs next to you."],
+["Signal strength","How strong the received wireless signal is","信号强度","The bars at the top of your phone screen."],
+["dBm","Unit of signal power; closer to 0 means stronger","分贝毫瓦（dBm）","−50 dBm is a strong signal; −85 dBm is barely holding on."],
+["Dead zone","Area with no usable wireless signal","信号死角","The corner of the house where videos always freeze."],
+["Range extender","Device that repeats a Wi-Fi signal so it reaches farther","信号扩展器","Like a relay runner carrying the baton further down the track."],
+["Mesh network","Several nodes working together as one Wi-Fi network","网状网络（Mesh）","Like friends standing around a house passing messages so every room is covered."],
+["Roaming","Moving between access points without dropping the connection","漫游","Like walking from shop to shop in a mall while staying on the same call."],
+["Handover","Passing a mobile connection from one cell tower to the next","越区切换","Like a baton passed between towers while you ride a train."],
+["Beamforming","Focusing the signal toward a specific device","波束成形","Like pointing a torch at someone instead of lighting the whole room."],
+["MIMO","Using several antennas to send and receive at the same time","多输入多输出（MIMO）","Like opening more checkout counters so more people pay at once."],
+["Antenna","Part that sends and receives radio waves","天线","The ears and mouth of a wireless device."],
+["Wi-Fi 6","Wi-Fi standard (802.11ax) built for crowded places","第六代 Wi-Fi","Like a smarter waiter who serves many tables in one trip."],
+["WPA3","Current security standard for Wi-Fi passwords and encryption","WPA3 加密","The newest, strongest lock on your Wi-Fi door."],
+["WPA2","Older but still common Wi-Fi security standard","WPA2 加密","A good lock, but WPA3 is newer and tougher."],
+["WEP","Outdated Wi-Fi security that is easy to break","WEP 加密（已淘汰）","Like a lock that opens with any paperclip."],
+["Hotspot","Place or device that shares internet over Wi-Fi","热点","A café's free Wi-Fi, or your phone sharing its data."],
+["Tethering","Sharing a phone's mobile data with other devices","网络共享","Letting your laptop ride on your phone's data plan."],
+["Guest network","Separate Wi-Fi for visitors, kept apart from your own devices","访客网络","Like a guest room that doesn't open into the rest of the house."],
+["Captive portal","Login page shown before you can use public Wi-Fi","认证页面（强制门户）","The airport Wi-Fi page asking you to accept the terms."],
+["Bluetooth","Short-range wireless link between nearby devices","蓝牙","How your earbuds talk to your phone."],
+["NFC","Very short-range wireless for tapping devices together","近场通信（NFC）","Tapping your phone to pay at the till."],
+["RFID","Radio tags that can be read without contact","射频识别（RFID）","The tag in a library book or a building access card."],
+["Zigbee","Low-power wireless protocol for smart-home devices","Zigbee 协议","How smart bulbs and sensors talk to their hub on very little battery."],
+["LoRa","Long-range, very low-power wireless for small amounts of data","LoRa 远距离无线","Like a postcard across town: slow and tiny, but it goes far on little energy."],
+["Cellular network","Mobile network made of many cell towers","蜂窝网络","The network your phone uses when there's no Wi-Fi."],
+["Base station","Tower equipment that connects phones to the mobile network","基站","The cell tower on the rooftop down the road."],
+["4G LTE","Fourth-generation mobile data standard","4G 移动网络","What made watching videos on mobile data normal."],
+["5G","Fifth-generation mobile network: faster, lower latency, more devices","第五代移动通信（5G）","A wider, faster highway for phones, cars and sensors."],
+["SIM card","Chip that identifies you to the mobile network","SIM 卡","Your ID badge for the mobile network."],
+["Spectrum","Range of radio frequencies used for wireless communication","频谱","Like land: governments divide it up and license plots of it."],
+["Frequency","How many times a radio wave repeats each second","频率","Like the pitch of a voice: higher pitch, higher frequency."],
+["Satellite internet","Internet delivered from satellites in orbit","卫星互联网","Internet for ships, planes and remote villages."],
+["Wi-Fi Direct","Devices connect over Wi-Fi without a router","Wi-Fi 直连","Sending photos from phone to printer with no router in between."],
+["Band steering","Router nudges devices onto the best Wi-Fi band","频段引导","Like an usher guiding you to the less crowded entrance."]
+];
+const HACKING = [
+["Ethical hacking","Testing systems for weaknesses with the owner's permission","道德黑客（白帽）","Like a locksmith hired to test your locks before a burglar does."],
+["Penetration test","An authorised, simulated attack that looks for security weaknesses","渗透测试","Like a fire drill for your network."],
+["Vulnerability","A weakness that could be used to break security","漏洞","Like a window left unlocked."],
+["Exploit","Code or a technique that takes advantage of a vulnerability","漏洞利用","Like the trick that opens the unlocked window."],
+["Zero-day","A flaw the vendor doesn't know about yet, so no fix exists","零日漏洞","Like a secret door nobody has noticed, so nobody has locked it."],
+["Patch","An update that fixes a bug or security flaw","补丁","Like repairing the broken lock."],
+["CVE","Public ID number given to a known vulnerability","通用漏洞编号（CVE）","Like a case number for each known weakness."],
+["Threat","Anything that could cause harm to a system","威胁","Like a storm that might hit your house."],
+["Attack surface","All the points where an attacker could try to get in","攻击面","Like every door and window of a building."],
+["Reconnaissance","Gathering information about a target before acting","侦察","Like studying the map before a trip."],
+["OSINT","Intelligence gathered from public sources","开源情报","Like learning about someone from their public social media."],
+["Port scanning","Checking which network ports on a host are open","端口扫描","Like walking down a hallway trying every door handle."],
+["Social engineering","Tricking people into giving away access or information","社会工程学","Like a con artist talking their way past the front desk."],
+["Phishing","Fake messages that trick people into revealing secrets or clicking bad links","网络钓鱼","Like bait on a hook that looks like real food."],
+["Malware","Any software designed to cause harm","恶意软件","Like germs, but for computers."],
+["Virus","Malware that attaches to files and spreads when they are run","计算机病毒","Like a cold that spreads when people shake hands."],
+["Worm","Malware that copies itself across networks on its own","蠕虫病毒","Like a weed that spreads without anyone planting it."],
+["Trojan","Malware disguised as something useful","木马","Like the wooden horse with soldiers hidden inside."],
+["Ransomware","Malware that locks your files and demands payment","勒索软件","Like a kidnapper holding your photos hostage."],
+["Spyware","Software that secretly watches what you do","间谍软件","Like a hidden camera in your room."],
+["Keylogger","A tool that records every key you press","键盘记录器","Like someone reading over your shoulder as you type."],
+["Rootkit","Malware that hides deep inside a system to keep control","Rootkit（隐匿工具包）","Like a spy who also edits the security camera footage."],
+["Backdoor","A hidden way into a system that skips the normal login","后门","Like a secret entrance behind the bookshelf."],
+["Botnet","A network of infected computers controlled by one attacker","僵尸网络","Like an army of sleepwalkers following one voice."],
+["DDoS attack","Flooding a service with traffic from many machines so it goes down","分布式拒绝服务攻击（DDoS）","Like a crowd blocking a shop door so real customers can't get in."],
+["Man-in-the-middle","Secretly intercepting the messages between two parties","中间人攻击","Like a postman who opens and rewrites your letters."],
+["Spoofing","Faking an identity, such as an address or a sender name","欺骗（身份伪造）","Like a caller pretending to be your bank."],
+["Packet sniffing","Capturing network traffic in order to read it","数据包嗅探","Like listening in on conversations in a busy café."],
+["Brute-force attack","Trying every possible password until one works","暴力破解","Like trying every key on a giant key ring."],
+["Password hash","A one-way scrambled form of a password, stored instead of the password itself","密码哈希","Like a fingerprint: it identifies you but can't be turned back into you."],
+["Salt","Random data added to a password before it is hashed","盐值","Like a unique spice, so two identical dishes taste different."],
+["SQL injection","Sneaking database commands into an input field","SQL 注入","Like scribbling an extra order onto the waiter's notepad."],
+["Cross-site scripting","Planting a malicious script in a web page that other people will open","跨站脚本攻击（XSS）","Like slipping a fake note onto a public notice board."],
+["Privilege escalation","Gaining higher access rights than you were given","权限提升","Like a visitor badge somehow turning into a master key."],
+["Payload","The part of an attack that does the actual harm","有效载荷","Like the cargo a delivery truck carries."],
+["Least privilege","Giving each user only the access they really need","最小权限原则","Like giving the cleaner a key to the lobby, not to the safe."],
+["Two-factor authentication","Logging in with two different proofs, such as a password plus a code","双因素认证","Like needing both a key and a fingerprint to open the door."],
+["Honeypot","A decoy system set up to attract and study attackers","蜜罐","Like a jar of honey that shows you where the bees come from."],
+["Red team","The group that plays the attacker in a security exercise","红队","Like the opposing side in a practice match."],
+["Blue team","The group that defends systems and responds to attacks","蓝队","Like the goalkeeper and defenders of the network."],
+["Bug bounty","A reward programme for reporting security flaws","漏洞赏金计划","Like a reward poster for finding cracks in the wall."],
+["Capture the Flag","A hacking competition where players solve security puzzles to find hidden 'flags'","夺旗赛（CTF）","Like an escape room for hackers."]
+];
+const KEY = "pingvocab.v1";
+const GOALS = [10,20,30,50], TIMERS = [5,8,12], SIZES = [5,10,20];
+const STEPS = [1,3,7,14,30];
+const DAY = 864e5;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function seedDeck(){ return {id:"net", title:"Computer Networking", theme:"net", scope:"auto", items: SEED.map((r,i)=>({id:"n"+i, term:r[0], en:r[1], zh:r[2]}))}; }
+function wirelessDeck(){ return {id:"wifi", title:"Wireless Networking", theme:"wifi", scope:"auto", items: WIRELESS.map((r,i)=>({id:"w"+i, term:r[0], en:r[1], zh:r[2], ex:r[3]}))}; }
+function hackingDeck(){ return {id:"hack", title:"Hacking Fundamentals", theme:"hack", scope:"auto", items: HACKING.map((r,i)=>({id:"h"+i, term:r[0], en:r[1], zh:r[2], ex:r[3]}))}; }
+function fresh(){ return {v:1, name:"", goal:20, timer:8, speak:false, dir:"w-zh", decks:[seedDeck(), wirelessDeck(), hackingDeck()], wifiAdded:true, hackAdded:true, cur:"net", prog:{}, days:{}}; }
+function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && s.v===1 && ((s.deck && s.deck.items) || (s.decks && s.decks.length))) return s; }catch(e){} return null; }
+/* every saved state (local or cloud, old or new) goes through normalize() before use */
+function normalize(S){
+if(!S.dir) S.dir = "w-zh";
+if(!S.flags) S.flags = {};
+if(!S.ver) S.ver = "advanced";
+/* Decks: S.decks holds every deck, S.cur the selected one. S.deck is a read-only shortcut to the selected deck
+   (not saved separately). Older saves had a single S.deck — it becomes the first deck; built-in decks are added once. */
+if(!S.decks){
+  const old = S.deck; delete S.deck;
+  const isNet = old.items[0] && old.items[0].id[0]==="n";
+  S.decks = [Object.assign({id: isNet ? "net" : "d1", theme: isNet ? "net" : "", scope: S.scope || "auto"}, old)];
+  S.cur = S.decks[0].id;
+}
+delete S.scope;
+if(!S.decks.some(d => d.id==="wifi") && !S.wifiAdded){ S.decks.push(wirelessDeck()); }
+S.wifiAdded = true;
+if(!S.decks.some(d => d.id==="hack") && !S.hackAdded){ S.decks.push(hackingDeck()); }   // added once; deleting it later stays deleted
+S.hackAdded = true;
+S.decks.forEach(d => { if(!d.scope) d.scope = "auto"; if(d.id==="wifi") d.theme = "wifi"; if(d.id==="hack") d.theme = "hack"; });
+if(!S.decks.length) S.decks.push(seedDeck());
+if(!S.decks.some(d => d.id===S.cur)) S.cur = S.decks[0].id;
+Object.defineProperty(S, "deck", {get(){ return S.decks.find(d => d.id===S.cur) || S.decks[0]; }, enumerable:false, configurable:true});
+if(!S.prog) S.prog = {}; if(!S.days) S.days = {}; if(!S.uniq) S.uniq = {}; if(!S.best) S.best = {}; if(!S.hit) S.hit = {}; if(!S.removed) S.removed = {}; if(S.combo==null) S.combo = 0;
+Object.values(S.prog).forEach(p => {
+  if(p.s==="mastered"){ p.s = "almost"; p.lv = 0; }
+  if(p.s==="almost" || p.s==="perfect") p.ever = true;
+  /* words learned before right/wrong counting existed get a starting record that matches their old level */
+  if(p.t==null){ const seedRec = {perfect:[3,3.6,3,0], almost:[1,1,1,0], vague:[2,1,1,1], weak:[1,0,0,1]}[p.s];
+    if(seedRec){ [p.t,p.pts,p.r,p.wr] = seedRec; } }
+});
+if(S.paceOk==null) S.paceOk = 650;
+if(S.paceNo==null) S.paceNo = 2500;
+return S;
+}
+let S = normalize(load() || fresh());
+const exampleOf = it => it.ex || (it.id[0]==="n" ? EX[it.term] || "" : "");
+const active = list => isAdv() ? list.filter(it => !S.flags[it.id]) : list;
+function applyVer(){ document.body.classList.toggle("simple", !isAdv()); }
+/* Light / dark: S.theme is "auto" (follow the phone or the viewer), "light" or "dark".
+   An explicit choice is written to <html data-theme>, which the stylesheet's token blocks follow. */
+const viewerTheme = document.documentElement.getAttribute("data-theme");
+const darkMQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+function effectiveTheme(){ const a = document.documentElement.getAttribute("data-theme"); return a || (darkMQ && darkMQ.matches ? "dark" : "light"); }
+const SUN = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>';
+const MOON = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
+function applyTheme(){
+  const root = document.documentElement, t = S.theme || "auto";
+  if(t==="light" || t==="dark") root.setAttribute("data-theme", t);
+  else if(viewerTheme) root.setAttribute("data-theme", viewerTheme); else root.removeAttribute("data-theme");
+  const dark = effectiveTheme()==="dark", b = $("btn-theme");
+  b.innerHTML = dark ? SUN : MOON; b.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+}
+$("btn-theme").onclick = () => { S.theme = effectiveTheme()==="dark" ? "light" : "dark"; save(); applyTheme(); };
+if(darkMQ && darkMQ.addEventListener) darkMQ.addEventListener("change", applyTheme);
+const LEVELS = [["perfect","Perfect","完全记住"],["almost","Almost","基本记住"],["vague","Vague","模糊"],["weak","Weak","薄弱"]];
+const PSTEPS = [3,7,14,30], LESSON = 20;
+function lessons(){
+  const items = S.deck.items, out = [];
+  for(let i=0;i<items.length;i+=LESSON) out.push(items.slice(i,i+LESSON));
+  if(out.length>1 && out.at(-1).length<10){ const last = out.pop(); out.push(out.pop().concat(last)); }
+  return out;
+}
+function curLesson(){ const i = lessons().findIndex(ls => active(ls).some(it => ["new","weak","vague"].includes(st(it.id)))); return i<0 ? lessons().length-1 : i; }
+function tally(list){ const c = {new:0, weak:0, vague:0, almost:0, perfect:0}; list.forEach(it => c[st(it.id)]++); return c; }
+const DIRS = [["w-zh","Term → 中文"],["zh-w","中文 → Term"],["w-en","Term → English"],["en-w","English → Term"],["mix","Mix all four"]];
+const HINT = {"w-zh":"Pick the Chinese meaning","zh-w":"Pick the term","w-en":"Pick the English meaning","en-w":"Pick the term"};
+function save(){ S.savedAt = Date.now(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} cloudSchedule(); }
+
+function dkey(off){ const d = new Date(Date.now() - (off||0)*DAY); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+/* S.days[date] = answers given that day; different terms today come from each term's last-studied date,
+   and past days' counts are kept in S.uniq (older days without one fall back to answers) */
+function termsToday(){ return S.decks.flatMap(d => d.items).filter(it => { const p = S.prog[it.id]; const ts = p && (p.act!=null ? p.act : p.last); return ts && dayOf(ts)===dkey(0); }).length; }
+function dayTerms(off){ if(!off) return termsToday(); const k = dkey(off); return S.uniq && S.uniq[k]!=null ? S.uniq[k] : (S.days[k]||0); }
+/* did a day meet its goal? today: live; past days: locked in when it happened (older saves fall back to today's goal) */
+function dayHit(off){ if(!off) return termsToday() >= S.goal; const k = dkey(off); return S.hit && S.hit[k]!=null ? !!S.hit[k] : dayTerms(off) >= S.goal; }
+function streak(){ let i = dayHit(0) ? 0 : 1, n = 0; while(dayHit(i)){ n++; i++; if(i>3660) break; } return n; }
+/* Advanced: a word's level comes only from its right/wrong record (speed doesn't count).
+   accuracy = right ÷ all tries — exactly the ✓ and ✗ shown.
+   <50% Weak · 50–74% Vague · 75–89% Almost · 90%+ Perfect, and Perfect needs at least 3 right answers.
+   A word missed on its latest try is held at Vague at most until it's answered right again.
+   Simple keeps the original streak-style rule (p.s) behind the scenes. */
+const isAdv = () => S.ver !== "simple";
+function accOf(p){ return p && p.t ? (p.r||0) / p.t : 0; }
+function advLevel(p){
+  if(!p || !p.t) return "new";
+  const a = accOf(p);
+  let lv = a < .5 ? "weak" : a < .75 ? "vague" : a < .9 ? "almost" : ((p.r||0) >= 3 ? "perfect" : "almost");
+  if(p.lastOk === false && (lv === "almost" || lv === "perfect")) lv = "vague";
+  return lv;
+}
+function tallyHint(p){
+  if(p.lastOk === false && accOf(p) >= .75) return ' · held back by the last miss';
+  const need = 3 - (p.r||0);
+  if(accOf(p) >= .9 && need > 0) return ' · '+need+' more ✓ for Perfect';
+  return '';
+}
+function st(id){ const p = S.prog[id]; return isAdv() ? advLevel(p) : ((p && p.s) || "new"); }
+function counts(){ return tally(active(S.deck.items)); }
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ---------- mascot: a lumpy potato; it sprouts when it's happy ---------- */
+/* perfect round: the potato cheers — arms waving, legs kicking, big open grin, twinkling stars */
+function cheerPotato(){
+  const f = "var(--face)", sk = "var(--skin)", sp = "var(--spot)";
+  const limb = d => '<path d="'+d+'" stroke="'+sp+'" stroke-width="10" fill="none" stroke-linecap="round"/><path d="'+d+'" stroke="'+sk+'" stroke-width="7" fill="none" stroke-linecap="round"/>';
+  const star = (x,y,r,delay,col) => '<path class="pm-tw" style="animation-delay:'+delay+'s" d="M'+x+' '+(y-r)+' L'+(x+r*.28)+' '+(y-r*.28)+' L'+(x+r)+' '+y+' L'+(x+r*.28)+' '+(y+r*.28)+' L'+x+' '+(y+r)+' L'+(x-r*.28)+' '+(y+r*.28)+' L'+(x-r)+' '+y+' L'+(x-r*.28)+' '+(y-r*.28)+'Z" fill="'+col+'"/>';
+  return '<svg viewBox="-18 -10 156 134" role="img" aria-label="Potato cheering" class="pm-cheer" style="display:block;width:100%;height:auto;overflow:visible">'+
+    star(-8,22,7,0,"var(--led)")+star(128,14,8,.3,"var(--led)")+star(134,72,5.5,.55,"var(--good)")+star(-12,80,5.5,.15,"var(--bad)")+star(104,-4,5,.45,"var(--bad)")+star(14,-2,4.5,.7,"var(--good)")+
+    '<g class="pm-jump">'+
+      '<g class="pm-legL">'+limb("M47 95 L43 111")+'<ellipse cx="41" cy="112.5" rx="7" ry="4" fill="'+sk+'" stroke="'+sp+'" stroke-width="2"/></g>'+
+      '<g class="pm-legR">'+limb("M71 95 L75 111")+'<ellipse cx="77" cy="112.5" rx="7" ry="4" fill="'+sk+'" stroke="'+sp+'" stroke-width="2"/></g>'+
+      '<g class="pm-armL">'+limb("M22 62 Q6 54 1 32")+'<circle cx="0" cy="29" r="6" fill="'+sk+'" stroke="'+sp+'" stroke-width="2"/></g>'+
+      '<g class="pm-armR">'+limb("M97 62 Q113 54 118 32")+'<circle cx="119" cy="29" r="6" fill="'+sk+'" stroke="'+sp+'" stroke-width="2"/></g>'+
+      '<g class="pm-sprout"><path d="M60 21 V5" stroke="var(--good)" stroke-width="3.5" stroke-linecap="round"/><ellipse cx="50" cy="5" rx="10" ry="5.5" transform="rotate(-25 50 5)" fill="var(--good)"/><ellipse cx="70" cy="3" rx="10" ry="5.5" transform="rotate(25 70 3)" fill="var(--good)"/></g>'+
+      '<path d="M58 19 C84 15 106 31 105 58 C104 84 86 101 59 100 C31 99 14 84 15 59 C16 34 33 22 58 19Z" fill="'+sk+'" stroke="'+sp+'" stroke-width="2"/>'+
+      '<ellipse cx="32" cy="40" rx="3.2" ry="2.2" fill="'+sp+'"/><ellipse cx="86" cy="84" rx="3.5" ry="2.4" fill="'+sp+'"/><ellipse cx="80" cy="32" rx="2.4" ry="1.8" fill="'+sp+'"/><ellipse cx="30" cy="80" rx="2.6" ry="1.8" fill="'+sp+'"/>'+
+      '<ellipse cx="31" cy="64" rx="7" ry="4.5" fill="var(--bad)" opacity=".4"/><ellipse cx="89" cy="64" rx="7" ry="4.5" fill="var(--bad)" opacity=".4"/>'+
+      '<path d="M38 53 l6 -8 l6 8 M70 53 l6 -8 l6 8" stroke="'+f+'" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'+
+      '<path d="M45 62 H75 Q74 82 60 83 Q46 82 45 62Z" fill="'+f+'" stroke="'+f+'" stroke-width="2" stroke-linejoin="round"/>'+
+      '<path d="M51 78.5 Q60 71 69 78.5 Q66 82 60 82 Q54 82 51 78.5Z" fill="var(--bad)"/>'+
+    '</g></svg>';
+}
+function mascot(mood){
+  if(mood==="star") return cheerPotato();
+  /* moods: happy = squint smile + blush + sprout (goal done) · glad = squint smile + blush (halfway) · calm = round eyes + smile (not started)
+            ok = round eyes, straight mouth · low = flat eyes, frown, sweat · star = the cheering potato */
+  const on = mood==="star"||mood==="happy", blush = on || mood==="glad", f = "var(--face)";
+  let eyes;
+  if(mood==="star") eyes = '<path d="M40 56 l5 -7 l5 7 M70 56 l5 -7 l5 7" stroke="'+f+'" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  else if(mood==="happy" || mood==="glad") eyes = '<path d="M40 56 q5 -7 10 0 M70 56 q5 -7 10 0" stroke="'+f+'" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
+  else if(mood==="ok" || mood==="calm") eyes = '<circle cx="45" cy="54" r="4" fill="'+f+'"/><circle cx="75" cy="54" r="4" fill="'+f+'"/>';
+  else eyes = '<path d="M40 55 h10 M70 55 h10" stroke="'+f+'" stroke-width="3.5" stroke-linecap="round"/>';
+  const mouth = mood==="low" ? '<path d="M53 72 q7 -5 14 0" stroke="'+f+'" stroke-width="3" fill="none" stroke-linecap="round"/>'
+    : mood==="ok" ? '<path d="M54 70 h12" stroke="'+f+'" stroke-width="3" stroke-linecap="round"/>'
+    : '<path d="M51 67 q9 9 18 0" stroke="'+f+'" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  const sprout = on ? '<path d="M60 20 V8" stroke="var(--good)" stroke-width="3" stroke-linecap="round"/><ellipse cx="52" cy="8" rx="8" ry="4.5" transform="rotate(-25 52 8)" fill="var(--good)"/><ellipse cx="68" cy="6" rx="8" ry="4.5" transform="rotate(25 68 6)" fill="var(--good)"/>' : '';
+  const spark = mood==="star" ? '<path d="M106 26 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5z" fill="var(--led)"/><path d="M12 36 l1.8 4 4 1.8 -4 1.8 -1.8 4 -1.8 -4 -4 -1.8 4 -1.8z" fill="var(--led)"/>' : "";
+  const sweat = mood==="low" ? '<path d="M92 36 q4 7 0 10 q-4 -3 0 -10z" fill="var(--sunk)" stroke="var(--muted)" stroke-width="1.5"/>' : '';
+  return '<svg viewBox="0 0 120 108" role="img" aria-label="Potato mascot" style="display:block;width:100%;height:auto">'+spark+sprout+
+    '<path d="M58 19 C84 15 106 31 105 58 C104 84 86 101 59 100 C31 99 14 84 15 59 C16 34 33 22 58 19Z" fill="var(--skin)" stroke="var(--spot)" stroke-width="2"/>'+
+    '<ellipse cx="32" cy="40" rx="3.2" ry="2.2" fill="var(--spot)"/><ellipse cx="86" cy="82" rx="3.5" ry="2.4" fill="var(--spot)"/><ellipse cx="80" cy="32" rx="2.4" ry="1.8" fill="var(--spot)"/><ellipse cx="30" cy="80" rx="2.6" ry="1.8" fill="var(--spot)"/>'+
+    (blush ? '<ellipse cx="34" cy="66" rx="6" ry="4" fill="var(--bad)" opacity=".35"/><ellipse cx="86" cy="66" rx="6" ry="4" fill="var(--bad)" opacity=".35"/>' : '')+
+    eyes + mouth + sweat + '</svg>';
+}
+try{ /* tab icon: the happy potato, with the colour tokens written out (a data-URI icon cannot read CSS variables) */
+  const ico = mascot("happy").replace("<svg ",'<svg xmlns="http://www.w3.org/2000/svg" ')
+    .replace(/var\(--skin\)/g,"#EBA95E").replace(/var\(--spot\)/g,"#B8702F").replace(/var\(--face\)/g,"#2A1608")
+    .replace(/var\(--good\)/g,"#1E9E4E").replace(/var\(--bad\)/g,"#E2412E");
+  document.getElementById("favicon").href = "data:image/svg+xml,"+encodeURIComponent(ico); }catch(e){}
+
+/* ---------- sound effects (Web Audio, no files) ---------- */
+let AC = null;
+function ac(){
+  if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(AC.state==="suspended") AC.resume().catch(()=>{});
+  return AC;
+}
+function note(freq, at, dur, type, vol, slideTo){
+  const c = ac(); if(!c) return;
+  const t = c.currentTime + at, o = c.createOscillator(), g = c.createGain();
+  o.type = type || "triangle"; o.frequency.setValueAtTime(freq, t);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || .16, t + .015); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + .05);
+}
+const NT = {C4:261.63,E4:329.63,G4:392,A4:440,C5:523.25,E5:659.25,G5:783.99,C6:1046.5,E6:1318.5};
+function sfx(kind){
+  if(S.sfx===false) return;
+  try{
+    const arp = (ns, step, dur, type, vol) => ns.forEach((n,i) => note(NT[n], i*step, i===ns.length-1 ? dur*2.2 : dur, type, vol));
+    if(kind==="right"){ note(NT.C6, 0, .09, "sine", .15); note(NT.E6, .07, .16, "sine", .15); }
+    else if(kind==="wrong") note(220, 0, .24, "triangle", .2, 130);
+    else if(kind==="root"){ arp(["C5","E5","G5","C6"], .1, .14, "square", .07); ["C5","E5","G5","C6"].forEach(n => note(NT[n], .5, .7, "triangle", .1)); }
+    else if(kind==="eng") arp(["C5","E5","G5","C6"], .11, .16, "triangle", .15);
+    else if(kind==="pro") arp(["C5","E5","G5"], .12, .16, "triangle", .15);
+    else if(kind==="link") arp(["G4","C5"], .16, .18, "sine", .16);
+    else if(kind==="re") arp(["C4","E4","G4"], .22, .2, "sine", .14);
+  }catch(e){}
+}
+
+/* ---------- screens ---------- */
+const SCREENS = ["setup","home","round","result","settings"];
+/* Phone back: while off the home screen we keep one extra history entry, so the back gesture
+   steps back inside the app (quiz → asks to quit, settings → where you came from, result → home)
+   instead of closing it. Going home by a button quietly removes that entry again. */
+let pushed = false, ignorePop = false;
+let curScreen = "";
+function show(name){
+  /* scroll to the top only when the screen actually changes; a re-render of the same screen
+     (selecting a deck, picking a lesson, unflagging a term) keeps the scroll position */
+  const changed = name !== curScreen; curScreen = name;
+  SCREENS.forEach(s => $("s-"+s).hidden = s!==name); if(changed) window.scrollTo(0,0);
+  document.body.dataset.screen = name;
+  if(name!=="round") $("fb-sheet").hidden = true;
+  if(name!=="result"){ const cf = $("confetti"); if(cf) cf.innerHTML = ""; }   // leaving the result never leaves confetti behind
+  try{
+    if(name!=="home" && name!=="setup" && !pushed){ history.pushState({potato:1}, ""); pushed = true; }
+    else if((name==="home" || name==="setup") && pushed){ pushed = false; ignorePop = true; history.back(); }
+  }catch(e){}
+}
+window.addEventListener("popstate", () => {
+  if(ignorePop){ ignorePop = false; return; }
+  pushed = false;
+  if(!$("s-round").hidden){ try{ history.pushState({potato:1}, ""); pushed = true; }catch(e){}
+    if(!$("quit-sheet").hidden) $("btn-stay").click(); else $("btn-quit").click(); }
+  else if(!$("s-settings").hidden) $("btn-back").click();
+  else if(!$("s-result").hidden) renderHome();
+});
+
+function seg(el, opts, cur, fmt, onPick){
+  el.innerHTML = opts.map(v => '<button type="button" aria-pressed="'+(v===cur)+'" data-v="'+v+'">'+fmt(v)+'</button>').join("");
+  el.onclick = e => { const b = e.target.closest("button"); if(!b) return; const v = Number(b.dataset.v); [...el.children].forEach(c => c.setAttribute("aria-pressed", c===b)); onPick(v); };
+}
+
+/* setup */
+let setupGoal = S.goal;
+function renderSetup(){
+  $("setup-mascot").innerHTML = mascot("happy");
+  seg($("setup-goal"), GOALS, setupGoal, v=>v, v => setupGoal = v);
+  show("setup");
+}
+$("btn-begin").onclick = () => {
+  const n = $("in-name").value.trim();
+  if(!n){ $("in-name").focus(); $("in-name").placeholder = "Type a name to begin"; return; }
+  S.name = n; S.goal = setupGoal; save(); renderHome();
+};
+$("in-name").addEventListener("keydown", e => { if(e.key==="Enter") $("btn-begin").click(); });
+
+/* home */
+let deckOpen = false;
+/* deck titles with a long word ("Fundamentals") shrink until every word fits on its line — never broken mid-word */
+const nextFrame = f => (window.requestAnimationFrame || setTimeout)(f);
+function fitNames(){
+  document.querySelectorAll("#deck-list .deck-name").forEach(el => {
+    el.style.fontSize = ""; el.classList.remove("squeeze");
+    if(!el.clientWidth) return;
+    let px = parseFloat(getComputedStyle(el).fontSize);
+    while(el.scrollWidth > el.clientWidth + 1 && px > 17){ px -= 1; el.style.fontSize = px + "px"; }
+    if(el.scrollWidth > el.clientWidth + 1) el.classList.add("squeeze");   // last resort for a very long word
+  });
+}
+/* a long single term (Reconnaissance, Two-factor authentication) shrinks until it fits, instead of breaking mid-word */
+function fitTerm(el){
+  el.style.fontSize = ""; el.classList.remove("squeeze");
+  const box = el.parentElement; if(!el.clientWidth || !box) return;
+  const limit = box.clientWidth - 8;
+  let px = parseFloat(getComputedStyle(el).fontSize);
+  const widest = () => Math.max(...el.textContent.split(/\s+/).map(wd => { const sp = document.createElement("span"); sp.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;font:inherit"; sp.textContent = wd; el.appendChild(sp); const w = sp.getBoundingClientRect().width; sp.remove(); return w; }));
+  while(widest() > limit && px > 22){ px -= 2; el.style.fontSize = px + "px"; }
+  if(widest() > limit) el.classList.add("squeeze");
+}
+window.addEventListener("resize", () => nextFrame(fitNames));
+try{ document.fonts.ready.then(() => nextFrame(fitNames)); }catch(e){}
+function renderDecks(nowText, mood){
+  const list = $("deck-list"), det = $("deck-detail");
+  $("detail-holder").appendChild(det);
+  const chev = '<svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  list.innerHTML = S.decks.map(d => {
+    const sel = d.id===S.cur, act = isAdv() ? d.items.filter(it => !S.flags[it.id]) : d.items;
+    const learned = act.length ? Math.round(act.filter(it => ["almost","perfect"].includes(st(it.id))).length/act.length*100) : 0;
+    /* Simple mode shows only the name and the word count; Advanced adds one status line */
+    const line2 = !isAdv() ? "" : sel ? nowText : learned + "% learned · tap to select";
+    const line1 = isAdv() ? d.items.length+' terms · '+(S.size||10)+' per round' : d.items.length+' terms';
+    return '<details class="panel flag-box deck-card'+(sel?' sel':'')+'" data-deck="'+esc(d.id)+'"'+(sel && deckOpen && isAdv() ? ' open' : '')+'>'+
+      '<summary class="deck-sum"><div class="today">'+(sel ? '<div class="mascot">'+mascot(mood)+'</div>' : '')+
+      '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><h3 class="deck-name">'+esc(d.title)+'</h3>'+
+      '<span class="muted">'+line1+'</span>'+(line2 ? '<span class="meta">'+esc(line2)+'</span>' : '')+'</div>'+
+      (sel && isAdv() ? chev : '')+'</div></summary></details>';
+  }).join("");
+  const selCard = list.querySelector(".deck-card.sel");
+  if(isAdv() && selCard) selCard.appendChild(det);
+  nextFrame(fitNames);
+}
+$("deck-list").addEventListener("click", e => {
+  const sum = e.target.closest("summary"); if(!sum) return;
+  e.preventDefault();
+  const card = sum.parentElement, id = card.dataset.deck;
+  if(id !== S.cur){ S.cur = id; deckOpen = false; save(); renderHome(); }
+  else if(isAdv()){ deckOpen = !deckOpen; card.open = deckOpen; }
+});
+function renderHome(){
+  $("hello").textContent = "Hi, " + (S.name.length > 12 ? S.name.split(/\s+/)[0] : S.name);
+  const sk = streak(), t = termsToday(), ans = S.days[dkey(0)]||0;
+  $("streak").textContent = sk; $("streak-lbl").textContent = "-day streak";
+  $("streak").parentElement.classList.toggle("hit", t >= S.goal);
+  $("streak").parentElement.classList.toggle("lit", sk > 0);
+  $("streak").parentElement.title = t >= S.goal ? "Today's goal is done — " + sk + (sk===1?" day":" days") + " in a row" : "Days in a row you met your goal";
+  $("today-n").textContent = t; $("today-goal").textContent = S.goal;
+  $("today-sub").textContent = "Across all decks · " + ans + (ans===1?" answer":" answers") + " today";
+  $("today-bar").style.width = Math.min(100, t/S.goal*100) + "%";
+  const names = ["S","M","T","W","T","F","S"];
+  let w = "";
+  for(let i=6;i>=0;i--){ const n = dayTerms(i), d = new Date(Date.now()-i*DAY); w += '<div><i class="'+(dayHit(i)?"hit":n>0?"part":"")+'"></i>'+(i===0?"Today":names[d.getDay()])+'</div>'; }
+  $("week").innerHTML = w;
+  const c = counts(), tot = Math.max(1, active(S.deck.items).length);
+  const L = lessons(), pi = poolInfo(), sc = S.deck.scope || "auto";
+  /* the potato warms up with today's progress: calm smile → glad at half the goal → sprouting when it is done */
+  renderDecks((pi.li>=0 ? "Lesson "+(pi.li+1) : "Whole deck") + " · today " + t + " / " + S.goal, t>=S.goal ? "happy" : t>=S.goal/2 ? "glad" : "calm");
+  const lpct = ls => { const a = active(ls); return a.length ? Math.round(a.filter(it => ["almost","perfect"].includes(st(it.id))).length/a.length*100) : 0; };
+  const opts = [["auto","Auto",""]].concat(L.map((ls,i) => [String(i),"Lesson "+(i+1), lpct(ls)+"%"]), [["all","Whole deck",""]]);
+  $("scope").innerHTML = opts.map(([v,l,x]) => '<button type="button" aria-pressed="'+(v===sc)+'" data-v="'+v+'">'+l+(x?'<small>'+x+'</small>':'')+'</button>').join("");
+  $("scope-note").textContent = sc==="auto"
+    ? (pi.li>=0 ? "Auto: Lesson "+(pi.li+1)+", your first unfinished lesson." : "Auto: every lesson is done, so rounds mix the whole deck, weakest and least-seen first.")
+    : sc==="all" ? "Whole deck: all terms, weakest and least-seen first."
+    : "Lesson "+(Number(sc)+1)+" only (terms "+(L.slice(0,Number(sc)).reduce((a,l)=>a+l.length,0)+1)+"–"+L.slice(0,Number(sc)+1).reduce((a,l)=>a+l.length,0)+").";
+  $("n-p").textContent = c.perfect; $("n-a").textContent = c.almost; $("n-v").textContent = c.vague; $("n-w").textContent = c.weak; $("n-n").textContent = c.new;
+  const fl = S.deck.items.filter(it => S.flags[it.id]);
+  $("flag-panel").hidden = !fl.length;
+  $("flag-n").textContent = fl.length + (fl.length===1 ? " term" : " terms");
+  $("flag-list").innerHTML = fl.map(it => { const ex = exampleOf(it);
+    return '<div class="fitem"><div class="term">'+esc(it.term)+'</div><p>'+esc(it.en)+(it.zh?' <span class="zh">'+esc(it.zh)+'</span>':'')+'</p>'+
+      (ex ? '<p class="ex">'+esc(ex)+'</p>' : '')+'<button class="link" data-unflag="'+esc(it.id)+'">I get it now</button></div>'; }).join("");
+  $("deck-bar").innerHTML = [["c-p",c.perfect],["c-a",c.almost],["c-v",c.vague],["c-w",c.weak],["c-n",c.new]].map(([k,v]) => '<span class="'+k+'" style="width:'+(v/tot*100)+'%"></span>').join("");
+  const canGo = pick("go").length > 0, gb = $("btn-go");
+  gb.disabled = !canGo; gb.textContent = canGo ? "Start a round" : "Every term here is flagged — unflag some to study";
+  const wb = $("btn-weak"); wb.disabled = c.weak===0; wb.textContent = c.weak ? "Review weak terms ("+c.weak+")" : "No weak terms yet";
+  show("home");
+}
+$("btn-go").onclick = () => startRound(pick("go"));
+$("scope").onclick = e => { const b = e.target.closest("button"); if(!b) return; S.deck.scope = b.dataset.v; save(); renderHome(); };
+$("flag-list").onclick = e => { const b = e.target.closest("[data-unflag]"); if(b){ delete S.flags[b.dataset.unflag]; save(); renderHome(); } };
+$("btn-weak").onclick = () => startRound(pick("weak"), true);
+$("btn-settings").onclick = renderSettings;
+
+/* ---------- picking the next 10 ---------- */
+/* Which words a round draws from.
+   Simple: always the whole deck. Advanced: the selected deck's picker (S.deck.scope) — "auto", a lesson index, or "all".
+   Auto = the first lesson that still has New/Weak/Vague words; once every lesson is done, the whole deck. */
+function allLessonsDone(){ return lessons().every(ls => active(ls).every(it => !["new","weak","vague"].includes(st(it.id)))); }
+function poolInfo(){
+  const L = lessons();
+  if(!isAdv() || S.deck.scope==="all") return {li:-1, items:S.deck.items};
+  const k = Number(S.deck.scope);
+  if(S.deck.scope!=="auto" && Number.isInteger(k) && k>=0 && k<L.length) return {li:k, items:L[k]};
+  if(allLessonsDone()) return {li:-1, items:S.deck.items};
+  const c = curLesson(); return {li:c, items:L[c]};
+}
+/* weakest first (New, Weak, Vague, Almost, Perfect), then lowest accuracy, then least recently seen */
+function weakFirst(list){
+  const rank = ["new","weak","vague","almost","perfect"];
+  return shuffle(list).sort((a,b) => {   /* shuffle first so ties come out in random order */
+    const pa = S.prog[a.id], pb = S.prog[b.id];
+    return rank.indexOf(st(a.id)) - rank.indexOf(st(b.id)) || accOf(pa) - accOf(pb) || ((pa&&pa.last)||0) - ((pb&&pb.last)||0);
+  });
+}
+function pick(mode){
+  const items = active(S.deck.items), now = Date.now(), N = S.size || 10;
+  if(mode==="weak") return shuffle(items.filter(it => st(it.id)==="weak")).slice(0,N);
+  const cur = active(poolInfo().items);
+  const weak = shuffle(cur.filter(it => st(it.id)==="weak"));
+  const vague = shuffle(cur.filter(it => st(it.id)==="vague"));
+  const fresh = shuffle(cur.filter(it => st(it.id)==="new"));
+  const autoScope = !isAdv() || (S.deck.scope||"auto")==="auto";
+  const dueOld = autoScope ? shuffle(items.filter(it => !cur.includes(it) && st(it.id)!=="new" && S.prog[it.id] && S.prog[it.id].due <= now)).slice(0,Math.ceil(N*.3)) : [];
+  let out = weak.slice(0,Math.ceil(N*.4)).concat(vague.slice(0,Math.ceil(N*.3)), dueOld);
+  out = out.concat(fresh.slice(0, Math.max(0,N-out.length)));
+  const add = list => { for(const it of list){ if(out.length>=N) break; if(!out.includes(it)) out.push(it); } };
+  /* filling up: words that were not in the last round go first */
+  const notLast = list => list.filter(it => !lastPick.has(it.id));
+  add(weak); add(vague);
+  add(notLast(weakFirst(cur))); if(autoScope) add(notLast(weakFirst(items)));
+  add(weakFirst(cur)); if(autoScope) add(weakFirst(items));
+  return shuffle(out.slice(0,N));
+}
+let lastPick = new Set();
+
+/* ---------- round ---------- */
+let R = null, raf = 0, nextT = 0;
+const canSpeak = "speechSynthesis" in window;
+function say(t){ if(!canSpeak) return; try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = "en-US"; u.rate = .95; speechSynthesis.speak(u); }catch(e){} }
+
+function startRound(items, wholeDeck){
+  if(!items.length) return;
+  lastPick = new Set(items.map(it => it.id));   /* remembered so the next round brings different words */
+  const li = wholeDeck ? -1 : poolInfo().li;
+  R = {items, i:0, res:[], li, before: li>=0 ? tally(active(lessons()[li])) : null, beforeDeck: tally(active(S.deck.items)), goalBefore: termsToday() >= S.goal};
+  if(S.sfx!==false) ac();
+  $("progress").style.setProperty("--n", items.length);
+  $("progress").innerHTML = items.map(()=>"<i></i>").join("");
+  show("round"); ask();
+}
+function ask(){
+  const it = R.items[R.i];
+  /* three wrong options whose text differs from the right one and from each other */
+  const label = o => [o.term, o.en, o.zh].join("|"), seen = new Set([label(it), it.en, it.zh, it.term]), others = [];
+  for(const x of shuffle(S.deck.items)){ if(others.length>=3) break; if(x.id===it.id || seen.has(x.en) || seen.has(x.term) || (x.zh && seen.has(x.zh))) continue; others.push(x); seen.add(x.en); seen.add(x.term); if(x.zh) seen.add(x.zh); }
+  R.opts = shuffle([it].concat(others)); R.locked = false;
+  $("count").textContent = (R.i+1)+"/"+R.items.length;
+  $("card-count").textContent = (R.i+1)+" / "+R.items.length;
+  $("new-tag").hidden = !!(S.prog[it.id] && S.prog[it.id].t);
+  $("fb-sheet").hidden = true;
+  /* slide the new question in (restart the animation each time) */
+  ["prompt","choices"].forEach(k => { const el = k==="prompt" ? document.querySelector("#s-round .prompt") : $("choices"); el.classList.remove("q-in"); void el.offsetWidth; el.classList.add("q-in"); });
+  [...$("progress").children].forEach((el,k) => el.className = k<R.i ? (R.res[k].ok?"ok":"no") : k===R.i ? "now" : "");
+  let d = S.dir==="mix" ? ["w-zh","zh-w","w-en","en-w"][Math.floor(Math.random()*4)] : S.dir;
+  if(d.includes("zh") && !it.zh) d = d==="w-zh" ? "w-en" : "en-w";
+  const mean = o => d.includes("zh") ? (o.zh || o.en) : o.en, wordFirst = d[0]==="w";
+  const pt = $("prompt-term");
+  pt.textContent = wordFirst ? it.term : mean(it);
+  pt.className = wordFirst ? "term" : "meaning";
+  $("s-round").classList.toggle("dir-en", d==="w-en");
+  if(wordFirst) nextFrame(() => fitTerm(pt));
+  $("prompt-hint").textContent = HINT[d];
+  $("btn-say").hidden = !canSpeak || !wordFirst;
+  $("verdict").textContent = ""; $("verdict").className = "verdict";
+  $("choices").innerHTML = R.opts.map((o,k) =>
+    '<button class="choice" data-k="'+k+'"><span class="k">'+(k+1)+'</span><span class="'+(wordFirst?"en":"term")+'">'+esc(wordFirst ? mean(o) : o.term)+'</span></button>').join("");
+  if(S.speak && wordFirst) say(it.term);
+  R.t0 = performance.now() + (R.i===0 ? 350 : 150);   /* a short grace while the card slides in */
+  runTimer();
+}
+function runTimer(){
+  const lim = S.timer*1000, bar = $("timer-bar"), tm = $("timer");
+  cancelAnimationFrame(raf);
+  const tick = () => {
+    const left = Math.min(1, Math.max(0, 1 - (performance.now()-R.t0)/lim));
+    bar.style.transform = "scaleX("+left+")"; tm.classList.toggle("low", left < .3);
+    if(left<=0){ answer(-1); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+}
+$("choices").onclick = e => { const b = e.target.closest(".choice"); if(b) answer(Number(b.dataset.k)); };
+$("btn-say").onclick = () => R && say(R.items[R.i].term);
+document.addEventListener("keydown", e => {
+  if(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if(!$("s-round").hidden){
+    if(/^[1-4]$/.test(e.key)) answer(Number(e.key)-1);
+    else if((e.key==="Enter" || e.key===" ") && R && R.locked && !R.paused){ e.preventDefault(); advance(); }
+    else if(e.key==="Escape" && R && !R.paused) $("btn-quit").click();
+    else if(e.key==="Escape" && R && R.paused) $("btn-stay").click();
+  }
+  else if(e.key==="Enter"){
+    if(!$("s-home").hidden && !$("btn-go").disabled) $("btn-go").click();
+    else if(!$("s-result").hidden) $("btn-next").click();
+  }
+});
+
+function answer(k){
+  if(!R || R.locked || R.paused || k >= R.opts.length) return; R.locked = true; cancelAnimationFrame(raf);
+  const it = R.items[R.i], ms = Math.max(0, Math.min(performance.now()-R.t0, S.timer*1000));
+  const right = R.opts.indexOf(it), ok = k===right;
+  const btns = [...$("choices").children];
+  btns.forEach(b => b.disabled = true);
+  btns[right].classList.add("is-right");
+  btns[right].querySelector(".k").textContent = "✓"; btns[right].querySelector(".k").classList.add("mark");
+  if(!ok && k>=0){ btns[k].classList.add("is-wrong"); btns[k].querySelector(".k").textContent = "✕"; btns[k].querySelector(".k").classList.add("mark"); }
+  btns.forEach((b,i) => { if(i!==right && i!==k) b.classList.add("dim"); });
+  /* combo keeps counting across rounds until a miss or time-out */
+  S.combo = ok ? (S.combo||0) + 1 : 0;
+  if(ok && S.combo >= 2){
+    const c = document.createElement("div"); c.className = "combo";
+    c.innerHTML = '<b>'+S.combo+'</b><span>COMBO !!</span>';
+    $("choices").appendChild(c);
+    /* sits in the gap above the chosen answer, never on top of its text */
+    /* centred on the gap above the chosen answer: it spans the empty space between two lines of option text */
+    c.style.top = (btns[right].offsetTop - 6 - c.offsetHeight/2) + "px";
+  }
+  const v = $("verdict");
+  v.textContent = ok ? "" : k<0 ? "Time's up" : "Not quite";
+  v.className = "verdict " + (ok ? "ok" : "no");
+  sfx(ok ? "right" : "wrong");
+  if(!ok) buzz(k<0 ? [40,50,40] : 70);
+  const b4 = st(it.id); learn(it.id, ok, ms, k>=0);
+  R.res.push({it, ok, ms, b4, af: st(it.id)});
+  S.days[dkey(0)] = (S.days[dkey(0)]||0) + 1;
+  if(!S.uniq) S.uniq = {}; S.uniq[dkey(0)] = termsToday();
+  if(!S.hit) S.hit = {}; if(termsToday() >= S.goal) S.hit[dkey(0)] = true;   /* locked in for this day */
+  save();
+  /* pacing: how long the feedback stays. A mistake can also wait for a tap (paceNo = 0). Any tap on the screen moves on early. */
+  R.waitFrom = Date.now();
+  const wait = ok ? (S.paceOk||650) : S.paceNo;
+  if(wait===0 && !ok){
+    $("fb-title").textContent = k<0 ? "Time's up" : "Not quite";
+    $("fb-answer").innerHTML = esc(it.term) + (it.zh ? ' <small>' + esc(it.zh) + '</small>' : '') + '<small>' + esc(it.en) + '</small>';
+    $("fb-sheet").hidden = false; $("btn-continue").focus({preventScroll:true});
+  }
+  else nextT = setTimeout(advance, wait==null ? 2500 : wait);
+}
+function advance(){ if(!R) return; clearTimeout(nextT); $("fb-sheet").hidden = true; R.i++; R.i < R.items.length ? ask() : finish(); }
+/* while the feedback is showing, a tap anywhere on the round screen (not the quit button) moves on */
+$("s-round").addEventListener("click", e => {
+  if(!R || !R.locked || R.paused || $("s-round").hidden) return;
+  if(e.target.closest("#btn-quit") || e.target.closest("#btn-say")) return;
+  if(!$("fb-sheet").hidden) return;   /* in tap-to-continue mode only the Continue button moves on */
+  if(Date.now() - (R.waitFrom||0) < 300) return;   /* the tap that answered never also skips */
+  advance();
+});
+$("btn-continue").onclick = e => { e.stopPropagation(); if(R && R.locked && !R.paused) advance(); };
+function buzz(pattern){ if(S.vibe===false) return; try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){} }
+/* levels: wrong → Weak; Weak → Vague; slow correct stays Vague, fast correct → Almost;
+   Almost answered fast and right again → Perfect (same day allowed); any wrong answer drops back to Weak */
+function dayOf(ts){ const d = new Date(ts); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function learn(id, ok, ms, active){
+  const p = S.prog[id] || {s:"new", lv:0, due:0, last:0}, now = Date.now();
+  if(active!==false) p.act = now; else if(p.act==null) p.act = 0;   /* an answer you gave; a time-out only schedules, it does not count as studying */
+  const fast = ms <= S.timer*1000*0.5, sameDay = p.last && dayOf(p.last)===dkey(0);
+  if(!ok){ p.s = "weak"; p.lv = 0; }
+  else if(p.s==="new") p.s = fast ? "almost" : "vague";
+  else if(p.s==="weak") p.s = "vague";
+  else if(p.s==="vague"){ if(fast) p.s = "almost"; }
+  else if(p.s==="almost"){ if(fast){ p.s = "perfect"; p.lv = 0; } }
+  else if(p.s==="perfect"){ if(!sameDay) p.lv = Math.min(p.lv+1, PSTEPS.length-1); }
+  p.due = p.s==="almost" ? now + DAY : p.s==="perfect" ? now + PSTEPS[p.lv]*DAY : now;
+  p.t = (p.t||0) + 1; p.pts = (p.pts||0) + (ok ? (fast ? 1.2 : 1) : 0);
+  if(ok) p.r = (p.r||0) + 1; else p.wr = (p.wr||0) + 1;
+  p.lastOk = ok;
+  const al = advLevel(p); if(al==="almost" || al==="perfect") p.ever = true;
+  p.last = now; S.prog[id] = p;
+}
+/* quit asks first: the timer pauses while the question is open */
+function pauseRound(why){
+  if(!R || R.paused) return;
+  cancelAnimationFrame(raf); clearTimeout(nextT);
+  R.paused = performance.now();
+  $("quit-title").textContent = why==="away" ? "Paused" : "Quit this round?";
+  $("quit-text").textContent = why==="away" ? "The timer stopped while you were away. Terms you've already answered are saved." : "The timer is paused. Terms you've already answered are saved.";
+  $("quit-sheet").hidden = false; $("btn-stay").focus();
+}
+$("btn-quit").onclick = () => pauseRound("quit");
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden && R && !$("s-round").hidden && !R.paused) pauseRound("away");
+});
+$("quit-sheet").addEventListener("click", e => { if(e.target === $("quit-sheet")) $("btn-stay").click(); });
+$("btn-stay").onclick = () => {
+  $("quit-sheet").hidden = true;
+  const away = performance.now() - R.paused; R.paused = 0;
+  if(R.locked){ if($("fb-sheet").hidden) advance(); } else { R.t0 += away; runTimer(); }
+};
+$("btn-leave").onclick = () => { $("quit-sheet").hidden = true; R.paused = 0; R = null; renderHome(); cloudSchedule(); cloudAfterRound(); };
+
+/* ---------- result ---------- */
+function finish(){
+  cancelAnimationFrame(raf); clearTimeout(nextT);
+  const n = R.res.length, ok = R.res.filter(r=>r.ok).length, secs = Math.round(R.res.reduce((a,r)=>a+r.ms,0)/1000);
+  const name = S.name;
+  let t;
+  const RANKS = {
+    net: [["Root Admin",", you own this network."],["Network Engineer",", every packet delivered."],["Packet Pro",", almost zero packet loss."],["Link Up",", the signal is getting stronger."],["Reconnecting",", every reboot makes the link stronger."]],
+    wifi: [["Full Bars",", every device connected, no lag."],["Strong Signal",", loud and clear."],["Connected",", just a little interference."],["One Bar",", the signal is coming back."],["Searching",", every scan finds more networks."]],
+    hack: [["Root Access",", total control, no trace."],["White Hat",", every lock tested."],["Pen Tester",", almost every door checked."],["Patching",", the gaps are closing."],["Rebooting",", every reboot comes back stronger."]],
+    "": [["Genius",", flawless and fast."],["Expert",", every single one right."],["Pro",", nearly perfect."],["Getting there",", it's sticking."],["Warming up",", every round makes it stronger."]]
+  };
+  const T = RANKS[S.deck.theme] || RANKS[""];
+  const tier = ok===n && secs <= n*2.5 ? 0 : ok===n ? 1 : ok >= n*.8 ? 2 : ok >= n*.5 ? 3 : 4;
+  t = [T[tier][0], "", name+T[tier][1], ["star","star","happy","ok","low"][tier], ["root","eng","pro","link","re"][tier]];
+  setTimeout(() => sfx(t[4]), 150);
+  $("rank").textContent = t[0]; $("praise").textContent = t[2];
+  $("result-mascot").innerHTML = mascot(t[3]);
+  $("result-mascot").classList.toggle("cheer", t[3]==="star");
+  /* daily goal: celebrate the round that crossed it, and keep the banner up for the rest of the day */
+  const todayN = termsToday(), hit = isAdv() && todayN >= S.goal, sk = streak();
+  $("goal-hit").hidden = !hit;
+  $("goal-hit-txt").textContent = (R.goalBefore===false && hit ? "Daily goal reached" : "Daily goal done") + " · " + sk + (sk===1 ? "-day streak" : "-day streak");
+  $("sc-ok").textContent = ok; $("sc-n").textContent = n; $("sc-time").textContent = secs;
+  /* best time is kept per round length, so short review rounds only compete with rounds of the same size */
+  if(!S.best) S.best = {};
+  const prevBest = S.best[n], perfect = ok===n, isBest = perfect && (prevBest==null || secs < prevBest);
+  if(isBest){ S.best[n] = secs; save(); }
+  const bestEl = $("sc-best");
+  bestEl.className = isBest && prevBest!=null ? "new" : "";
+  bestEl.textContent = !perfect ? (prevBest==null ? "Best time needs every answer right" : "Best: "+prevBest+" s (all right)")
+    : prevBest==null ? "First all-right "+n+"-question round" : isBest ? "New best! (was "+prevBest+" s)" : "Best: "+prevBest+" s";
+  const ansT = S.days[dkey(0)]||0;
+  $("sc-combo").textContent = S.combo||0;
+  const miss = R.res.filter(r=>!r.ok), got = R.res.filter(r=>r.ok);
+  $("btn-redo").hidden = !miss.length;
+  $("btn-redo").textContent = "Review missed ("+miss.length+")";
+  R.missed = miss.map(r=>r.it);
+  const row = (r,cls) => { const ex = exampleOf(r.it), fl = !!S.flags[r.it.id];
+    return '<details class="item"><summary class="row '+cls+'"><div style="min-width:0"><div class="term">'+esc(r.it.term)+'</div><p>'+esc(r.it.en)+(r.it.zh?' <span class="zh">'+esc(r.it.zh)+'</span>':'')+'</p>'+
+    (isAdv() && S.prog[r.it.id] ? '<div class="tally"><b class="r">✓ '+(S.prog[r.it.id].r||0)+'</b> · <b class="w">✗ '+(S.prog[r.it.id].wr||0)+'</b> · '+Math.round(accOf(S.prog[r.it.id])*100)+'% · '+LEVELS.find(l=>l[0]===advLevel(S.prog[r.it.id]))[1]+tallyHint(S.prog[r.it.id])+'</div>' : '')+'</div>'+
+    (canSpeak ? '<button class="icon-btn" data-say="'+esc(r.it.term)+'" aria-label="Listen to '+esc(r.it.term)+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7"/></svg></button>' : '')+'</summary>'+
+    '<div class="more">'+(ex ? '<span class="ex-label">Example</span><p>'+esc(ex)+'</p>' : '')+
+    (isAdv() ? '<button class="flag-btn'+(fl?' on':'')+'" data-flag="'+esc(r.it.id)+'">'+(fl?'Flagged · tap to unflag':'I don\'t get it')+'</button>' : '')+'</div></details>'; };
+  $("res-list").innerHTML = '<p class="note" style="text-align:center">Tap a term for an example.</p>' +
+    (miss.length ? '<h3>Missed ('+miss.length+')</h3>'+miss.map(r=>row(r,"miss")).join("") : "") +
+    (got.length ? '<h3>Got it ('+got.length+')</h3>'+got.map(r=>row(r,"")).join("") : "");
+  const cf = $("confetti"); cf.innerHTML = "";
+  if(ok===n && cf.animate) setTimeout(burst, 80);       // perfect round: streamers spray out of the potato and the screen corners
+  else if(ok >= n*.8){
+    const cols = ["var(--led)","var(--accent)","var(--good)","var(--bad)"];
+    for(let i=0;i<40;i++){ const s = document.createElement("i"); s.style.left = (Math.random()*100)+"%"; s.style.background = cols[i%4]; s.style.animationDelay = (Math.random()*.6)+"s"; cf.appendChild(s); }
+  }
+  if(isAdv()){ renderLesson(); renderDeck(); }
+  show("result"); cloudSchedule();
+}
+/* confetti burst: one continuous spray. Each piece follows real physics (launch speed, air drag, gravity),
+   sampled into keyframes so the arc never stops at the top; pieces flutter as they fall. Colours borrow the COMBO rainbow. */
+function burst(){
+  const cf = $("confetti"), host = $("s-result"), m = $("result-mascot");
+  if(host.hidden || !cf.animate) return;
+  const hr = host.getBoundingClientRect(), mr = m.getBoundingClientRect();
+  const cols = ["#E8559A","#9A5BE0","#3F7FE8","#F0A24A","#1E9E4E","#E2412E","#F5C842"];
+  const bottom = Math.min(hr.height, window.innerHeight - hr.top) - 10;
+  const G = 900, K = 1.6, STEPS = 24;            // gravity px/s², air drag, keyframe samples
+  const piece = (x, y, angle, speed, delay, i) => {
+    const el = document.createElement("b"), w = 5 + Math.random()*4, h = 10 + Math.random()*9;
+    el.style.width = w+"px"; el.style.height = h+"px"; el.style.background = cols[i % cols.length];
+    cf.appendChild(el);
+    const a = angle*Math.PI/180, vx = Math.cos(a)*speed, vy = Math.sin(a)*speed;
+    const dur = 2.2 + Math.random()*.9, spin = (Math.random()<.5?-1:1)*(360+Math.random()*540), flut = 3 + Math.random()*3, sway = 10 + Math.random()*16;
+    const frames = [];
+    for(let k=0;k<=STEPS;k++){
+      const t = dur*k/STEPS, e = (1-Math.exp(-K*t))/K;           // drag slows both axes
+      const px = x - w/2 + vx*e + Math.sin(t*flut)*sway*Math.min(1,t);
+      const py = y - h/2 + vy*e + G/K*(t - e);                    // gravity pulls through the drag
+      frames.push({transform:"translate("+px.toFixed(1)+"px,"+py.toFixed(1)+"px) rotate("+(spin*t/dur).toFixed(0)+"deg) scaleY("+Math.cos(t*flut*2).toFixed(2)+")",
+                   opacity: k/STEPS > .8 ? (1-k/STEPS)*5 : 1});
+    }
+    el.animate(frames, {duration: dur*1000, delay, fill:"forwards", easing:"linear"}).onfinish = () => el.remove();
+  };
+  const ox = mr.left + mr.width/2 - hr.left, oy = mr.top + mr.height*.3 - hr.top;
+  let i = 0;
+  for(let n=0;n<90;n++) piece(ox+(Math.random()-.5)*40, oy, -90+(Math.random()-.5)*130, 480+Math.random()*420, n*10, i++);   // fountain from behind the potato, ~0.9 s
+  for(let n=0;n<36;n++) piece(6, bottom, -55-Math.random()*25, 700+Math.random()*500, 120+n*14, i++);                         // left cannon
+  for(let n=0;n<36;n++) piece(hr.width-6, bottom, -125+Math.random()*25, 700+Math.random()*500, 120+n*14, i++);               // right cannon
+  clearTimeout(burst.t); burst.t = setTimeout(() => { cf.innerHTML = ""; }, 4500);   // safety net: nothing can linger
+}
+const ORDER = ["new","weak","vague","almost","perfect"];
+/* green when the change is good news: more Perfect/Almost/Vague, or fewer Weak/New */
+function deltaCls(k, d){ const good = (k==="weak" || k==="new") ? d<0 : d>0; return good ? "up" : "down"; }
+function roundNote(lessonItems){
+  const inL = R.res.filter(r => lessonItems.includes(r.it)), out = R.res.length - inL.length;
+  /* a miss is a miss, even on a brand-new word (New → Weak is not "moving up") */
+  const up = inL.filter(r => r.ok && ORDER.indexOf(r.af) > ORDER.indexOf(r.b4)).length;
+  const missed = inL.filter(r => !r.ok).length;
+  const same = inL.length - up - missed;
+  return 'Bars show all '+active(lessonItems).length+' terms in this lesson. This round: '+inL.length+' of them — '+up+' moved up, '+missed+' missed, '+same+' stayed put'+(out ? ' (plus '+out+' from other lessons)' : '')+'.';
+}
+function renderDeck(){
+  const all = active(S.deck.items), tot = Math.max(1, all.length), c = tally(all), b = R.beforeDeck;
+  const today = termsToday(), ans = S.days[dkey(0)]||0, left = Math.max(0, S.goal - today), L = lessons();
+  const seg = [["perfect","c-p"],["almost","c-a"],["vague","c-v"],["weak","c-w"],["new","c-n"]];
+  const legend = [["perfect","Perfect"],["almost","Almost"],["vague","Vague"],["weak","Weak"],["new","New"]].map(([k,l]) => {
+    const d = c[k] - b[k];
+    return '<span><i class="sw '+seg.find(x=>x[0]===k)[1]+'"></i>'+l+' <b>'+c[k]+'</b>'+(d ? ' <b class="'+deltaCls(k,d)+'-mini">'+(d>0?'+':'−')+Math.abs(d)+'</b>' : '')+'</span>'; }).join("");
+  $("deck-card").innerHTML =
+    '<div class="lesson-head"><div><small>Whole deck</small><b>'+esc(S.deck.title)+'</b><small>'+all.length+' terms · '+L.length+' lessons</small></div>'+
+    '<div class="lesson-pct"><div class="pct-num">'+Math.round((c.perfect+c.almost)/tot*100)+'<small>%</small></div><span>remembered now</span></div></div>'+
+    '<div class="bar" style="height:14px">'+seg.map(([k,cl]) => '<span class="'+cl+'" style="width:'+(c[k]/tot*100)+'%"></span>').join("")+'</div>'+
+    '<div class="legend">'+legend+'</div>'+
+    '<div class="levels" style="grid-template-columns:1fr"><p class="round-note" style="font-weight:700;color:var(--ink)">Today</p></div>'+
+    '<div class="goalbar"><span style="width:'+Math.min(100, today/S.goal*100)+'%">'+today+'</span></div>'+
+    '<p class="goal-note">'+today+' different terms studied · goal '+S.goal+(left ? ' · '+left+' to go' : ' · reached')+'</p>'+
+    '<p class="goal-note">'+ans+(ans===1?' answer':' answers')+' today · '+streak()+'-day streak</p>';
+}
+function renderLesson(){
+  $("lesson-card").hidden = R.li < 0; if(R.li < 0) return;
+  const L = lessons(), full = L[R.li], ls = active(full), size = Math.max(1, ls.length), after = tally(ls), first = L.slice(0,R.li).reduce((a,l)=>a+l.length,0);
+  /* two views: "ever learned" never drops; "remembered now" is live and drops when a word slips to Weak */
+  const learned = Math.round((after.perfect+after.almost)/size*100), flagged = full.length - ls.length;
+  const everPct = Math.round(ls.filter(it => S.prog[it.id] && S.prog[it.id].ever).length/size*100);
+  const today = termsToday(), left = Math.max(0, S.goal-today);
+  const rows = LEVELS.map(([k,en,zh]) => {
+    const n = after[k], d = n - R.before[k];
+    const w = n ? 'style="width:'+Math.max(12, n/size*78)+'%"' : '';
+    return '<div class="lab">'+en+'</div><div class="track"><span class="fill l-'+k+(n?'':' zero')+'" '+w+'>'+n+'</span>'+
+      (d ? '<span class="delta '+deltaCls(k,d)+'">'+(d>0?'+':'−')+Math.abs(d)+'</span>' : '')+'</div>';
+  }).join("");
+  const done = !["new","weak","vague"].some(k => after[k]);
+  const auto = S.deck.scope==="auto" || !S.deck.scope;
+  $("lesson-card").innerHTML =
+    '<div class="lesson-head"><div><small>'+esc(S.deck.title)+'</small><b>Lesson '+(R.li+1)+'</b><small>Terms '+(first+1)+'–'+(first+full.length)+'</small></div>'+
+    '<div class="lesson-pct"><div class="pct-num">'+everPct+'<small>%</small></div><span>ever learned</span><span>Remembered now: '+learned+'%</span></div></div>'+
+    '<div class="levels">'+'<p class="round-note">'+roundNote(L[R.li])+'</p>'+rows+(after.new ? '<p class="rest">'+after.new+' not started yet</p>' : '')+(flagged ? '<p class="rest">'+flagged+' flagged "don\'t get it", set aside</p>' : '')+'</div>'+
+    (done ? '<p class="unlock">Lesson '+(R.li+1)+' complete.'+(auto ? (poolInfo().li<0 ? ' Every lesson is done, so rounds now mix the whole deck, weakest first.' : ' Next round: Lesson '+(poolInfo().li+1)+'.') : ' Pick another lesson or Whole deck on the home screen.')+'</p>' : '');
+}
+$("res-list").onclick = e => {
+  const b = e.target.closest("[data-say]");
+  if(b){ e.preventDefault(); say(b.dataset.say); return; }
+  const f = e.target.closest("[data-flag]");
+  if(f){ const id = f.dataset.flag; if(S.flags[id]) delete S.flags[id]; else S.flags[id] = true; save();
+    const on = !!S.flags[id]; f.classList.toggle("on", on); f.textContent = on ? "Flagged · tap to unflag" : "I don't get it"; }
+};
+$("btn-next").onclick = () => startRound(pick("go"));
+$("btn-redo").onclick = () => startRound(shuffle(R.missed));
+$("btn-home").onclick = () => { renderHome(); cloudAfterRound(); };
+$("btn-res-home").onclick = () => { renderHome(); cloudAfterRound(); };
+/* settings remembers where it was opened from; back returns there
+   unless the deck or progress changed, which makes the old result stale */
+let settingsFrom = "home", resultStale = false;
+$("btn-res-settings").onclick = () => { renderSettings(); settingsFrom = "result"; resultStale = false; };
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  settingsFrom = "home";
+  const thEl = $("set-theme");
+  thEl.innerHTML = [["auto","Auto"],["light","Light"],["dark","Dark"]].map(([v,l]) => '<button type="button" aria-pressed="'+((S.theme||"auto")===v)+'" data-v="'+v+'">'+l+'</button>').join("");
+  thEl.onclick = e => { const b = e.target.closest("button"); if(!b) return; S.theme = b.dataset.v; save(); applyTheme(); [...thEl.children].forEach(c => c.setAttribute("aria-pressed", c===b)); };
+  const vEl = $("set-ver"), vNote = () => $("ver-note").textContent = isAdv()
+    ? "Lessons, memory levels from each term's right/wrong record, daily goal and streak."
+    : "Just the quiz: your score, round time and the terms you saw.";
+  vEl.innerHTML = [["simple","Simple"],["advanced","Advanced"]].map(([v,l]) => '<button type="button" aria-pressed="'+(S.ver===v)+'" data-v="'+v+'">'+l+'</button>').join("");
+  vEl.onclick = e => { const b = e.target.closest("button"); if(!b || b.dataset.v===S.ver) return; S.ver = b.dataset.v; save(); applyVer(); resultStale = true; vNote();
+    [...vEl.children].forEach(c => c.setAttribute("aria-pressed", c===b)); };
+  vNote();
+  $("set-name").value = S.name;
+  seg($("set-goal"), GOALS, S.goal, v=>v, v => { S.goal = v; if(!S.hit) S.hit = {}; if(termsToday() >= v) S.hit[dkey(0)] = true; else delete S.hit[dkey(0)]; save(); });
+  seg($("set-size"), SIZES, S.size||10, v=>v, v => { S.size = v; save(); });
+  seg($("set-timer"), TIMERS, S.timer, v=>v+" s", v => { S.timer = v; save(); });
+  seg($("set-pace-ok"), [400,650,1000], S.paceOk, v => (v/1000).toString().replace(/^0/,"0")+" s", v => { S.paceOk = v; save(); });
+  seg($("set-pace-no"), [1500,2500,4000,0], S.paceNo, v => v===0 ? "Tap to continue" : (v/1000)+" s", v => { S.paceNo = v; save(); });
+  $("vibe-row").hidden = !("vibrate" in navigator);
+  $("set-vibe").setAttribute("aria-checked", S.vibe!==false);
+  renderDeckRows(); renderSync(); $("backup-msg").textContent = ""; $("restore-box").hidden = true;
+  const dirEl = $("set-dir");
+  dirEl.innerHTML = DIRS.map(([v,l]) => '<button type="button" aria-pressed="'+(v===S.dir)+'" data-v="'+v+'">'+l+'</button>').join("");
+  dirEl.onclick = e => { const b = e.target.closest("button"); if(!b) return; S.dir = b.dataset.v; save(); [...dirEl.children].forEach(c => c.setAttribute("aria-pressed", c===b)); };
+  $("set-speak").setAttribute("aria-checked", S.speak);
+  $("set-sfx").setAttribute("aria-checked", S.sfx!==false);
+  $("set-speak").disabled = !canSpeak;
+  $("imp-msg").textContent = ""; resetBox(false);
+  show("settings");
+}
+$("set-name").addEventListener("change", e => { const v = e.target.value.trim(); if(v){ S.name = v; save(); } });
+$("set-speak").onclick = e => { S.speak = !S.speak; e.currentTarget.setAttribute("aria-checked", S.speak); save(); if(S.speak) say("Potato"); };
+$("set-sfx").onclick = e => { S.sfx = S.sfx===false; e.currentTarget.setAttribute("aria-checked", S.sfx); save(); if(S.sfx){ ac(); sfx("right"); } };
+$("set-vibe").onclick = e => { S.vibe = S.vibe===false; e.currentTarget.setAttribute("aria-checked", S.vibe); save(); if(S.vibe) buzz(40); };
+
+/* ---------- your decks: remove one (with its progress), add a built-in deck back ---------- */
+const BUILTIN = [["net","Computer Networking",seedDeck],["wifi","Wireless Networking",wirelessDeck],["hack","Hacking Fundamentals",hackingDeck]];
+function renderDeckRows(){
+  $("deck-rows").innerHTML = S.decks.map(d =>
+    '<div class="deck-row" data-id="'+esc(d.id)+'"><div style="min-width:0"><b>'+esc(d.title)+'</b><small>'+d.items.length+' terms'+(d.id===S.cur ? ' · selected' : '')+'</small></div>'+
+    (S.decks.length>1 ? '<button type="button" class="link" data-rm="'+esc(d.id)+'">Remove</button>' : '<small>Your only deck</small>')+'</div>').join("");
+  const missing = BUILTIN.filter(([id]) => !S.decks.some(d => d.id===id));
+  $("deck-restore").innerHTML = missing.length ? 'Add back: ' + missing.map(([id,t]) => '<button type="button" class="link" data-add="'+id+'">'+t+'</button>').join(' · ') : '';
+}
+$("deck-rows").onclick = e => {
+  const rm = e.target.closest("[data-rm]"), yes = e.target.closest("[data-rm-yes]"), no = e.target.closest("[data-rm-no]");
+  if(rm){ const row = rm.closest(".deck-row"), d = S.decks.find(x => x.id===rm.dataset.rm);
+    row.innerHTML = '<div style="min-width:0"><b>Remove “'+esc(d.title)+'”?</b><small>Its progress goes with it.</small></div><div class="confirm"><button type="button" class="btn btn-danger" data-rm-yes="'+esc(d.id)+'">Remove</button><button type="button" class="btn btn-ghost" data-rm-no="1">Keep</button></div>'; return; }
+  if(no){ renderDeckRows(); return; }
+  if(yes){ const id = yes.dataset.rmYes, d = S.decks.find(x => x.id===id); if(!d || S.decks.length<2) return;
+    d.items.forEach(it => { delete S.prog[it.id]; delete S.flags[it.id]; });
+    S.decks = S.decks.filter(x => x.id!==id); if(S.cur===id) S.cur = S.decks[0].id;
+    if(!S.removed) S.removed = {}; S.removed[id] = Date.now();
+    save(); resultStale = true; renderDeckRows(); }
+};
+$("deck-restore").onclick = e => {
+  const b = e.target.closest("[data-add]"); if(!b) return;
+  const def = BUILTIN.find(([id]) => id===b.dataset.add); if(!def || S.decks.some(d => d.id===def[0])) return;
+  S.decks.push(def[2]()); S.cur = def[0]; if(S.removed) delete S.removed[def[0]]; save(); resultStale = true; renderDeckRows();
+};
+
+/* ---------- cloud copy of your progress (your claude.ai account) ----------
+   The browser's copy is the working copy. Inside claude.ai, when you are signed in, the same state is also kept
+   under your own private path in this page's database, so another phone or laptop picks it up. Two copies are
+   merged word by word (the later answer wins); settings and the deck list come from the newer copy. */
+let cloud = {ref:null, status:"local", note:"", timer:0, busy:false, dirty:false, lastAt:0, unsub:null};
+function renderSync(){
+  const line = $("sync-line"), txt = $("sync-txt"); if(!line) return;
+  line.className = "sync" + (cloud.status==="on" ? " on" : cloud.status==="err" ? " err" : "");
+  let when = ""; try{ when = cloud.lastAt ? new Date(cloud.lastAt).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : ""; }catch(e){}
+  txt.textContent = cloud.status==="on" ? "Synced to your Claude account" + (when ? " · " + when : "") + ". Open this link on any device and your progress follows."
+    : cloud.status==="syncing" ? "Syncing with your Claude account…"
+    : cloud.status==="err" ? "Cloud sync paused — " + cloud.note + " Progress is still saved on this device."
+    : "Saved on this device only." + (cloud.note ? " " + cloud.note : "");
+  $("backup-box").hidden = cloud.status==="on" || cloud.status==="syncing";
+}
+function cloudStatus(st, note){ cloud.status = st; cloud.note = note || ""; renderSync(); }
+function plain(st){ return JSON.parse(JSON.stringify(st)); }
+function canon(v){ return Array.isArray(v) ? "["+v.map(canon).join(",")+"]" : v && typeof v==="object" ? "{"+Object.keys(v).sort().map(k => JSON.stringify(k)+":"+canon(v[k])).join(",")+"}" : JSON.stringify(v); }
+function sameState(a, b){ const x = plain(a), y = plain(b); delete x.savedAt; delete y.savedAt; return canon(x)===canon(y); }
+/* word-by-word merge of two copies of the state */
+function weight(st){ return Object.keys(st.prog||{}).length + Object.keys(st.days||{}).length + Math.max(0, (st.decks||[]).length - 3); }
+function mergeStates(a, b, prefer){
+  let aFirst = (a.savedAt||0) >= (b.savedAt||0);
+  if(prefer==="a") aFirst = true; else if(prefer==="b") aFirst = false;
+  else if(weight(a)===0 && weight(b)>0) aFirst = false;   /* a copy with history beats a copy that has never been used */
+  else if(weight(b)===0 && weight(a)>0) aFirst = true;
+  const [base, other] = aFirst ? [plain(a), plain(b)] : [plain(b), plain(a)];
+  const out = base;
+  /* decks: the base's list, plus the other copy's decks it has never removed */
+  out.removed = Object.assign({}, other.removed||{}, base.removed||{});
+  (other.decks||[]).forEach(d => { if(!out.decks.some(x => x.id===d.id) && !(base.removed||{})[d.id]) out.decks.push(d); });
+  out.decks.forEach(d => { delete out.removed[d.id]; });
+  out.flags = Object.assign({}, other.flags||{}, base.flags||{});
+  out.combo = Math.max(base.combo||0, other.combo||0);
+  out.hit = Object.assign({}, other.hit||{}, base.hit||{});
+  out.prog = Object.assign({}, other.prog||{}, base.prog||{});
+  for(const id of Object.keys(other.prog||{})){ const p = other.prog[id], q = base.prog && base.prog[id]; if(q && (p.last||0) > (q.last||0)) out.prog[id] = p; }
+  out.days = Object.assign({}, other.days||{}, base.days||{});
+  for(const k of Object.keys(other.days||{})) out.days[k] = Math.max(other.days[k]||0, (base.days||{})[k]||0);
+  out.uniq = Object.assign({}, other.uniq||{}, base.uniq||{});
+  for(const k of Object.keys(other.uniq||{})) out.uniq[k] = Math.max(other.uniq[k]||0, (base.uniq||{})[k]||0);
+  out.best = Object.assign({}, other.best||{}, base.best||{});
+  for(const k of Object.keys(other.best||{})) out.best[k] = Math.min(other.best[k], (base.best||{})[k]==null ? Infinity : base.best[k]);
+  out.savedAt = Math.max(a.savedAt||0, b.savedAt||0);
+  return out;
+}
+function adopt(st, savedAt){
+  S = normalize(st); S.savedAt = savedAt || S.savedAt || Date.now();
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+  applyVer(); applyTheme();
+  if(!$("s-settings").hidden) renderSettings(); else if(!$("s-result").hidden) renderHome(); else if(!$("s-round").hidden){} else S.name ? renderHome() : renderSetup();
+}
+function cloudSchedule(){ if(!cloud.ref) return; cloud.dirty = true; clearTimeout(cloud.timer); cloud.timer = setTimeout(cloudPush, 1500); }
+async function cloudPush(){
+  if(!cloud.ref || cloud.busy || !cloud.dirty) return;
+  if(R && !$("s-round").hidden){ clearTimeout(cloud.timer); cloud.timer = setTimeout(cloudPush, 4000); return; }   /* after the round, not during it */
+  cloud.busy = true; cloud.dirty = false;
+  try{ await cloud.ref.set(plain(S)); cloud.lastAt = Date.now(); cloudStatus("on"); }
+  catch(e){
+    const code = e && e.code; cloud.dirty = true;
+    if(code==="quota_exceeded") cloudStatus("err", "your decks are too big for the cloud copy.");
+    else if(code==="invalid_argument" || code==="not_granted" || code==="revoked") cloudStatus("err", "this account can't write here.");
+    else { cloudStatus("err", "no connection; will retry."); clearTimeout(cloud.timer); cloud.timer = setTimeout(cloudPush, 8000); }
+  }
+  cloud.busy = false;
+  if(cloud.dirty && cloud.status==="on") cloudSchedule();
+}
+function takeRemote(remote){
+  if(!remote || remote.v!==1 || !remote.decks) return;
+  try{ remote = normalize(plain(remote)); }catch(e){ return; }   /* an older cloud copy gets today's defaults before comparing */
+  const merged = mergeStates(S, remote);
+  const changedLocal = !sameState(merged, S), changedRemote = !sameState(merged, remote);
+  if(changedRemote) merged.savedAt = Date.now();   /* a merged copy that adds something is a new version for every device */
+  if(changedLocal) adopt(merged, merged.savedAt);
+  else { S.savedAt = merged.savedAt; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+  if(changedRemote){ cloud.dirty = true; cloudPush(); } else { cloud.lastAt = Date.now(); cloudStatus("on"); }
+}
+async function initCloud(){
+  if(!(window.claude && typeof window.claude.use==="function")) return;
+  let db = null, user = null;
+  try{ [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]); }catch(e){ return; }
+  if(!db || !user){ cloudStatus("local", "Sign in to claude.ai to sync across devices."); return; }
+  let uid = null; try{ uid = await user.id(); }catch(e){}
+  if(!uid){ cloudStatus("local", "Sign in to claude.ai to sync across devices."); return; }
+  try{ cloud.ref = db.doc("data/users/" + uid + "/potato"); }catch(e){ return; }
+  cloudStatus("syncing");
+  let snap = null; try{ snap = await cloud.ref.get(); }catch(e){ cloud.ref = null; cloudStatus("err", "couldn't reach the cloud copy."); return; }
+  if(snap && snap.exists) takeRemote(snap.data()); else { cloud.dirty = true; await cloudPush(); }
+  try{ cloud.unsub = cloud.ref.onSnapshot(sn => {
+      if(!sn.exists || (sn.metadata && sn.metadata.hasPendingWrites)) return;
+      const d = sn.data(); if(!d || (d.savedAt||0) <= (S.savedAt||0)) return;
+      if(R && !$("s-round").hidden){ cloud.pending = d; return; }   /* never swap the state mid-round */
+      takeRemote(d);
+    }, () => { cloudStatus("err", "live sync stopped; reload to reconnect."); }); }catch(e){}
+}
+function cloudAfterRound(){ if(cloud.pending){ const d = cloud.pending; cloud.pending = null; takeRemote(d); } }
+
+/* ---------- backup code (only offered where the cloud copy is unavailable) ---------- */
+function backupCode(){ return "POTATO1." + btoa(unescape(encodeURIComponent(JSON.stringify(plain(S))))); }
+$("btn-backup").onclick = async () => {
+  const code = backupCode(), msg = $("backup-msg");
+  try{ await navigator.clipboard.writeText(code); msg.className = "msg ok"; msg.textContent = "Backup code copied. Paste it on your other device."; }
+  catch(e){ $("restore-box").hidden = false; $("restore-text").value = code; $("restore-text").select(); msg.className = "msg ok"; msg.textContent = "Copy the code from the box below."; }
+};
+$("btn-restore").onclick = () => { $("restore-box").hidden = false; $("restore-text").value = ""; $("restore-text").focus(); };
+$("btn-restore-no").onclick = () => { $("restore-box").hidden = true; };
+$("btn-restore-go").onclick = () => {
+  const msg = $("backup-msg"), raw = $("restore-text").value.trim();
+  try{
+    if(!raw.startsWith("POTATO1.")) throw 0;
+    const st = JSON.parse(decodeURIComponent(escape(atob(raw.slice(8)))));
+    if(!st || st.v!==1 || !st.decks) throw 0;
+    adopt(mergeStates(S, st, "b")); save(); resultStale = true; $("restore-box").hidden = true;
+    msg.className = "msg ok"; msg.textContent = "Restored: decks and settings from the code, progress merged with this device.";
+  }catch(e){ msg.className = "msg no"; msg.textContent = "That doesn't look like a Potato backup code."; }
+};
+$("btn-back").onclick = () => { const v = $("set-name").value.trim(); if(v){ S.name = v; save(); }
+  if(settingsFrom==="result" && !resultStale && R) show("result"); else renderHome(); };
+$("btn-import").onclick = () => {
+  const lines = $("imp-text").value.split(/\n/).map(l => l.trim()).filter(Boolean);
+  const items = [], bad = [];
+  lines.forEach((l,i) => { const p = l.split(/\s*[|\t]\s*/); if(p.length>=2 && p[0] && p[1]) items.push({id:"u"+i, term:p[0], en:p[1], zh:p[2]||"", ex:p[3]||""}); else bad.push(i+1); });
+  const msg = $("imp-msg");
+  if(bad.length){ msg.className = "msg no"; msg.textContent = "Line "+bad.slice(0,5).join(", ")+" needs a | between the term and its meaning."; return; }
+  if(items.length < 4){ msg.className = "msg no"; msg.textContent = "Add at least 4 terms so each question has 4 choices."; return; }
+  const distinct = f => new Set(items.map(f).filter(Boolean)).size;
+  if(distinct(it => it.term.toLowerCase()) < 4 || distinct(it => it.en.toLowerCase()) < 4 || (items.some(it => it.zh) && distinct(it => it.zh) < 4)){
+    msg.className = "msg no"; msg.textContent = "Each question needs 4 different choices, so use at least 4 different terms and 4 different meanings."; return; }
+  /* importing always adds a new deck next to the others and selects it; nothing is replaced */
+  const id = "d" + Date.now().toString(36), title = $("imp-title").value.trim() || "My deck " + (S.decks.length + 1);
+  items.forEach((it, i) => it.id = id + "_" + i);
+  S.decks.push({id, title, theme:"", scope:"auto", items}); S.cur = id; save(); resultStale = true;
+  msg.className = "msg ok"; msg.textContent = "Added \u201c" + title + "\u201d with " + items.length + " terms. It's now selected on the home screen.";
+  $("imp-text").value = ""; $("imp-title").value = "";
+};
+function resetBox(ask){
+  const box = $("reset-box");
+  if(!ask){ box.innerHTML = '<button class="btn btn-ghost" id="btn-reset" style="width:auto;min-height:42px;font-size:1rem">Reset progress</button>'; $("btn-reset").onclick = () => resetBox(true); return; }
+  box.innerHTML = '<span style="font-weight:600">Clear all progress?</span><button class="btn btn-danger" id="btn-yes">Clear</button><button class="btn btn-ghost" id="btn-no">Keep</button>';
+  $("btn-yes").onclick = () => { S.prog = {}; S.days = {}; S.uniq = {}; S.best = {}; S.combo = 0; save(); resultStale = true; resetBox(false); $("backup-msg").className="msg ok"; $("backup-msg").textContent = "Progress cleared."; };
+  $("btn-no").onclick = () => resetBox(false);
+}
+
+applyVer(); applyTheme();
+S.name ? renderHome() : renderSetup();
+initCloud();
+})();
+</script>
+<script>
+if("serviceWorker" in navigator && (location.protocol === "https:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))){
+  window.addEventListener("load", () => { navigator.serviceWorker.register("./sw.js").then(r => r.update()).catch(() => {}); });
+}
+</script>
+
+
+</body>
+</html>
