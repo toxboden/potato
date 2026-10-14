@@ -1,0 +1,18 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.kognivium.potato",
+      "sha256_cert_fingerprints": ["92:25:77:61:5B:74:05:BE:5B:4A:0A:BD:0D:A6:65:89:AB:F1:7F:0C:B3:98:ED:21:13:81:14:9A:18:A9:F4:EC"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.potato_deploy_phi.twa",
+      "sha256_cert_fingerprints": ["44:A1:99:BD:63:FA:EB:D8:E8:BE:FA:74:F3:E0:96:83:C8:F1:77:4E:A4:33:35:2B:30:8E:88:AD:74:91:25:F8"]
+    }
+  }
+]
